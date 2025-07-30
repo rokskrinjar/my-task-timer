@@ -21,9 +21,11 @@ export const Timer = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [clockType, setClockType] = useState<ClockType>('digital');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const intervalRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fullscreenRef = useRef<HTMLDivElement | null>(null);
+  const hideControlsTimeoutRef = useRef<number | null>(null);
 
   // Play progress sounds
   useEffect(() => {
@@ -75,6 +77,45 @@ export const Timer = () => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // Handle mouse activity for auto-hiding controls in fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const handleMouseMove = () => {
+      setShowControls(true);
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+      hideControlsTimeoutRef.current = window.setTimeout(() => {
+        setShowControls(false);
+      }, 3000); // Hide after 3 seconds of inactivity
+    };
+
+    const handleMouseLeave = () => {
+      setShowControls(false);
+    };
+
+    if (fullscreenRef.current) {
+      fullscreenRef.current.addEventListener('mousemove', handleMouseMove);
+      fullscreenRef.current.addEventListener('mouseleave', handleMouseLeave);
+    }
+
+    // Initial timeout
+    hideControlsTimeoutRef.current = window.setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+
+    return () => {
+      if (fullscreenRef.current) {
+        fullscreenRef.current.removeEventListener('mousemove', handleMouseMove);
+        fullscreenRef.current.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+    };
+  }, [isFullscreen]);
 
   const toggleFullscreen = async () => {
     if (!fullscreenRef.current) return;
@@ -329,66 +370,104 @@ export const Timer = () => {
         ref={fullscreenRef}
         className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background flex items-center justify-center' : ''}`}
       >
-        <Card className={`${isFullscreen ? 'border-none shadow-none bg-transparent' : 'p-8'}`}>
-          <div className="text-center space-y-6">
-            {/* Fullscreen Toggle Button */}
-            <div className="flex justify-end">
+        {isFullscreen && (
+          <>
+            {/* Fullscreen Toggle Button - Top Right */}
+            <div className={`fixed top-4 right-4 z-60 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
               <Button
                 onClick={toggleFullscreen}
                 size="sm"
                 variant="outline"
-                className="mb-4"
+                className="bg-background/80 backdrop-blur"
               >
-                {isFullscreen ? (
-                  <>
-                    <Minimize className="w-4 h-4 mr-2" />
-                    Exit Fullscreen
-                  </>
-                ) : (
-                  <>
-                    <Maximize className="w-4 h-4 mr-2" />
-                    Fullscreen
-                  </>
-                )}
+                <Minimize className="w-4 h-4 mr-2" />
+                Exit Fullscreen
               </Button>
             </div>
+
+            {/* Control Buttons - Bottom Corners */}
+            <div className={`fixed bottom-8 left-8 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              {!isActive ? (
+                <Button onClick={startTimer} size="lg" className="px-8 bg-background/80 backdrop-blur">
+                  <Play className="w-5 h-5 mr-2" />
+                  Start Focus
+                </Button>
+              ) : (
+                <Button onClick={pauseTimer} size="lg" variant="outline" className="px-8 bg-background/80 backdrop-blur">
+                  <Pause className="w-5 h-5 mr-2" />
+                  {isPaused ? 'Resume' : 'Pause'}
+                </Button>
+              )}
+            </div>
+
+            <div className={`fixed bottom-8 right-8 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <Button onClick={resetTimer} size="lg" variant="destructive" className="px-8 bg-background/80 backdrop-blur">
+                <RotateCcw className="w-5 h-5 mr-2" />
+                Reset
+              </Button>
+            </div>
+          </>
+        )}
+
+        <Card className={`${isFullscreen ? 'border-none shadow-none bg-transparent' : 'p-8'}`}>
+          <div className="text-center space-y-6">
+            {!isFullscreen && (
+              <>
+                {/* Fullscreen Toggle Button */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={toggleFullscreen}
+                    size="sm"
+                    variant="outline"
+                    className="mb-4"
+                  >
+                    <Maximize className="w-4 h-4 mr-2" />
+                    Fullscreen
+                  </Button>
+                </div>
+              </>
+            )}
 
             <div className={isFullscreen ? 'scale-150' : ''}>
               {renderClock()}
             </div>
             
-            {/* Control Buttons */}
-            <div className="flex justify-center gap-4">
-              {!isActive ? (
-                <Button onClick={startTimer} size="lg" className="px-8">
-                  <Play className="w-5 h-5 mr-2" />
-                  Start Focus
-                </Button>
-              ) : (
-                <Button onClick={pauseTimer} size="lg" variant="outline" className="px-8">
-                  <Pause className="w-5 h-5 mr-2" />
-                  {isPaused ? 'Resume' : 'Pause'}
-                </Button>
-              )}
-              
-              <Button onClick={resetTimer} size="lg" variant="destructive" className="px-8">
-                <RotateCcw className="w-5 h-5 mr-2" />
-                Reset
-              </Button>
-            </div>
-            
-            {user && !isFullscreen && (
-              <p className="text-sm text-muted-foreground">
-                Your progress is being tracked! Complete sessions without interruption to build your focus streak.
-              </p>
-            )}
-            
-            {!user && !isFullscreen && (
-              <p className="text-sm text-muted-foreground">
-                <Button variant="link" className="p-0 h-auto text-sm">
-                  Sign in
-                </Button> to track your progress and build focus streaks!
-              </p>
+            {!isFullscreen && (
+              <>
+                {/* Control Buttons */}
+                <div className="flex justify-center gap-4">
+                  {!isActive ? (
+                    <Button onClick={startTimer} size="lg" className="px-8">
+                      <Play className="w-5 h-5 mr-2" />
+                      Start Focus
+                    </Button>
+                  ) : (
+                    <Button onClick={pauseTimer} size="lg" variant="outline" className="px-8">
+                      <Pause className="w-5 h-5 mr-2" />
+                      {isPaused ? 'Resume' : 'Pause'}
+                    </Button>
+                  )}
+                  
+                  <Button onClick={resetTimer} size="lg" variant="destructive" className="px-8">
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Reset
+                  </Button>
+                </div>
+                
+                {user && (
+                  <p className="text-sm text-muted-foreground">
+                    Your progress is being tracked! Complete sessions without interruption to build your focus streak.
+                  </p>
+                )}
+                
+                {!user && (
+                  <p className="text-sm text-muted-foreground">
+                    <Button variant="link" className="p-0 h-auto text-sm">
+                      Sign in
+                    </Button> to track your progress and build focus streaks!
+                  </p>
+                )}
+              </>
             )}
           </div>
         </Card>
