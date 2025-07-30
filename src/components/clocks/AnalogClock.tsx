@@ -10,12 +10,15 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
   const seconds = timeLeft % 60;
   
   // Calculate normal clock hand angles (starting from 12 o'clock, going clockwise)
-  const secondAngle = ((60 - seconds) / 60) * 360; // Countdown from 60 seconds
-  const minuteAngle = ((60 - minutes) / 60) * 360; // Countdown from target minutes
+  const totalMinutes = Math.floor(totalTime / 60);
+  const elapsedMinutes = totalMinutes - minutes;
+  const elapsedSeconds = (totalTime - timeLeft) % 60;
+  
+  const minuteAngle = (elapsedMinutes / 60) * 360; // Start at 12, move toward target
+  const secondAngle = (elapsedSeconds / 60) * 360; // Start at 12, move clockwise
   
   // Calculate target minute mark position (actual minute position on clock face)
-  const targetMinutes = Math.floor(totalTime / 60);
-  const targetAngle = (targetMinutes / 60) * 360; // Target at proper minute position
+  const targetAngle = (totalMinutes / 60) * 360; // Target at proper minute position
 
   return (
     <div className="relative">
