@@ -88,20 +88,50 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
           {/* Falling sand particles (when active) */}
           {isActive && (
             <g>
-              {Array.from({ length: 3 }, (_, i) => (
+              {Array.from({ length: 8 }, (_, i) => (
                 <circle
                   key={i}
-                  cx="60"
+                  cx={58 + Math.random() * 4}
                   cy="52"
-                  r="1"
+                  r="0.8"
                   fill="hsl(var(--primary))"
+                  opacity="0.8"
                   className="animate-pulse"
                   style={{
-                    animationDelay: `${i * 0.2}s`,
-                    animationDuration: '0.8s'
+                    animationDelay: `${i * 0.15}s`,
+                    animationDuration: '1.2s'
                   }}
-                />
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    attributeType="XML"
+                    type="translate"
+                    values={`0,0; 0,${25 + Math.random() * 10}; 0,${35 + Math.random() * 5}`}
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                    begin={`${i * 0.2}s`}
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0;0.8;0.6;0"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                    begin={`${i * 0.2}s`}
+                  />
+                </circle>
               ))}
+              
+              {/* Sand stream effect */}
+              <line
+                x1="60"
+                y1="50"
+                x2="60"
+                y2="55"
+                stroke="hsl(var(--primary))"
+                strokeWidth="2"
+                opacity="0.6"
+                className="animate-pulse"
+              />
             </g>
           )}
           

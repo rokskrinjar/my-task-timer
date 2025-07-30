@@ -23,13 +23,17 @@ export const Timer = () => {
   const intervalRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Play reinforcement sound every 5 minutes
+  // Play progress sounds
   useEffect(() => {
     const originalTime = selectedMinutes * 60;
     const elapsed = originalTime - timeLeft;
     
-    if (isActive && elapsed > 0 && elapsed % 300 === 0) { // Every 5 minutes (300 seconds)
-      playReinforcementSound();
+    if (isActive && elapsed > 0) {
+      if (elapsed % 300 === 0) { // Every 5 minutes
+        playCalmProgressSound();
+      } else if (elapsed % 60 === 0) { // Every 1 minute
+        playMinuteProgressSound();
+      }
     }
   }, [timeLeft, isActive, selectedMinutes]);
 
@@ -60,26 +64,61 @@ export const Timer = () => {
     };
   }, [isActive, isPaused, timeLeft]);
 
-  const playReinforcementSound = () => {
-    // Create a simple positive tone using Web Audio API
+  const playMinuteProgressSound = () => {
+    // Nice approving sound of progress - gentle upward arpeggio
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const notes = [440, 554.37]; // A4, C#5 - pleasant, approving interval
     
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    notes.forEach((frequency, index) => {
+      setTimeout(() => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.4);
+      }, index * 150);
+    });
     
-    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5 note
-    oscillator.type = 'sine';
+    toast("Nice progress! 👍");
+  };
+
+  const playCalmProgressSound = () => {
+    // Calming but reassuring sound - perfect fifth harmony
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const fundamentalFreq = 349.23; // F4
+    const harmonies = [349.23, 523.25, 659.25]; // F4, C5, E5 - calming triad
     
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+    // Play harmonies together for a rich, calming sound
+    harmonies.forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      const volume = index === 0 ? 0.2 : 0.12; // Fundamental slightly louder
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.2);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 1.2);
+    });
     
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.8);
-    
-    toast("Keep going! You're doing great! 🎉");
+    toast("Excellent focus! Keep it up! ✨");
   };
 
   const playCompletionSound = () => {
