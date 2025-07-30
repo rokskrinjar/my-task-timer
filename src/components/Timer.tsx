@@ -259,6 +259,8 @@ export const Timer = () => {
       if (error) throw error;
       
       if (!wasInterrupted) {
+        // Check for new achievements after completing a session
+        await supabase.rpc('check_and_award_achievements', { user_uuid: user.id });
         toast("Session saved to your progress!");
       }
     } catch (error) {
