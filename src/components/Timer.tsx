@@ -16,31 +16,10 @@ const PRESET_TIMES = [5, 10, 15, 20, 25, 30];
 export const Timer = () => {
   const { user } = useAuth();
   
-  // Load timer state from localStorage on component mount
-  const loadTimerState = () => {
-    const saved = localStorage.getItem('focusTimer');
-    if (saved) {
-      const state = JSON.parse(saved);
-      // Check if the saved session is still valid (not too old)
-      const now = Date.now();
-      if (now - state.lastUpdate < 24 * 60 * 60 * 1000) { // Valid for 24 hours
-        return state;
-      }
-    }
-    return {
-      selectedMinutes: 15,
-      timeLeft: 15 * 60,
-      isActive: false,
-      isPaused: false,
-      lastUpdate: Date.now()
-    };
-  };
-
-  const initialState = loadTimerState();
-  const [selectedMinutes, setSelectedMinutes] = useState(initialState.selectedMinutes);
-  const [timeLeft, setTimeLeft] = useState(initialState.timeLeft);
-  const [isActive, setIsActive] = useState(initialState.isActive);
-  const [isPaused, setIsPaused] = useState(initialState.isPaused);
+  const [selectedMinutes, setSelectedMinutes] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(15 * 60);
+  const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [clockType, setClockType] = useState<ClockType>('digital');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -49,38 +28,37 @@ export const Timer = () => {
   const fullscreenRef = useRef<HTMLDivElement | null>(null);
   const hideControlsTimeoutRef = useRef<number | null>(null);
 
-  // Save timer state to localStorage whenever it changes
+  // Handle page visibility and navigation away to track unfinished sessions
   useEffect(() => {
-    const timerState = {
-      selectedMinutes,
-      timeLeft,
-      isActive,
-      isPaused,
-      lastUpdate: Date.now()
-    };
-    localStorage.setItem('focusTimer', JSON.stringify(timerState));
-  }, [selectedMinutes, timeLeft, isActive, isPaused]);
-
-  // Restore timer time based on elapsed time when component mounts
-  useEffect(() => {
-    if (initialState.isActive && !initialState.isPaused) {
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - initialState.lastUpdate) / 1000);
-      const newTimeLeft = Math.max(0, initialState.timeLeft - elapsedSeconds);
-      
-      if (newTimeLeft > 0) {
-        setTimeLeft(newTimeLeft);
-      } else {
-        // Timer finished while away
-        setIsActive(false);
-        setTimeLeft(0);
-        if (user) {
-          saveSession(false); // Completed session
-          playCompletionSound();
-        }
+    const handleBeforeUnload = () => {
+      if (isActive && !isPaused && user) {
+        // Save as interrupted session when navigating away
+        navigator.sendBeacon('/api/focus-session', JSON.stringify({
+          user_id: user.id,
+          duration_minutes: selectedMinutes,
+          was_interrupted: true
+        }));
       }
-    }
-  }, []); // Only run on mount
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isActive && !isPaused && user) {
+        // Save as interrupted session when tab becomes hidden
+        saveSession(true);
+        setIsActive(false);
+        setIsPaused(false);
+        toast("Focus session interrupted - navigated away from timer");
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isActive, isPaused, user, selectedMinutes]);
 
   // Play progress sounds
   useEffect(() => {
@@ -341,8 +319,6 @@ export const Timer = () => {
       saveSession(true); // Was interrupted
     }
     
-    // Clear localStorage when manually reset
-    localStorage.removeItem('focusTimer');
   };
 
   const selectTime = (minutes: number) => {
