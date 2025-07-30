@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Timer } from '@/components/Timer';
 import { ProgressDashboard } from '@/components/ProgressDashboard';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -46,6 +47,7 @@ const Index = () => {
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground">
