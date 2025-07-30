@@ -2,16 +2,14 @@ import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Timer } from '@/components/Timer';
+import { ProgressDashboard } from '@/components/ProgressDashboard';
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Don't redirect non-authenticated users - let them use the timer
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,43 +25,47 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold mb-4">Welcome to PadelHub</h1>
-          <p className="text-xl text-muted-foreground mb-8">Connect with padel players in your area</p>
-          <Link to="/auth">
-            <Button size="lg">Get Started</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
-          <h1 className="text-xl font-bold">PadelHub</h1>
+          <h1 className="text-xl font-bold">FocusFlow</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, {user.email}
-            </span>
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user.email}
+                </span>
+                <Button variant="outline" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
       
       <main className="container py-8">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold">Welcome to PadelHub</h2>
-          <p className="text-xl text-muted-foreground">
-            Your padel community platform is ready to go!
+        <div className="text-center space-y-6 mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Beat Procrastination
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Stay focused with our simple, effective countdown timer. Track your progress and build the habit of deep work.
           </p>
         </div>
+        
+        <Timer />
+        
+        {user && (
+          <div className="mt-16">
+            <ProgressDashboard />
+          </div>
+        )}
       </main>
     </div>
   );
