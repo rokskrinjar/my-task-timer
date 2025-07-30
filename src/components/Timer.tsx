@@ -14,6 +14,7 @@ type ClockType = 'analog' | 'digital' | 'hourglass';
 const PRESET_TIMES = [5, 10, 15, 20, 25, 30];
 
 export const Timer = () => {
+  console.log('Timer component initializing...');
   const { user } = useAuth();
   
   const [selectedMinutes, setSelectedMinutes] = useState(15);
