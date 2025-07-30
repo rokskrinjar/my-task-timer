@@ -13,9 +13,9 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
   const secondAngle = ((60 - seconds) / 60) * 360; // Countdown from 60 seconds
   const minuteAngle = ((60 - minutes) / 60) * 360; // Countdown from target minutes
   
-  // Calculate target minute mark position
+  // Calculate target minute mark position (actual minute position on clock face)
   const targetMinutes = Math.floor(totalTime / 60);
-  const targetAngle = 0; // Target is at 12 o'clock
+  const targetAngle = (targetMinutes / 60) * 360; // Target at proper minute position
 
   return (
     <div className="relative">

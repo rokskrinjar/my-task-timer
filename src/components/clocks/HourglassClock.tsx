@@ -51,36 +51,36 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
           {/* Top sand (remaining time) */}
           <defs>
             <clipPath id="topSand">
-              <path d="M25 15 L95 15 L95 20 L85 20 L60 45 L60 50 L50 50 L50 45 L25 20 Z" />
+              <path d="M30 20 L85 20 L60 45 L55 45 Z" />
             </clipPath>
           </defs>
           
           <rect
-            x="25"
-            y={15 + (60 - topSandHeight)}
-            width="70"
-            height={topSandHeight}
-            fill="#d4a574"
+            x="30"
+            y={20 + (50 - topSandHeight * 0.83)}
+            width="55"
+            height={topSandHeight * 0.83}
+            fill="#f4d799"
             clipPath="url(#topSand)"
             className="transition-all duration-1000 ease-linear"
             style={{
-              filter: isActive ? 'drop-shadow(0 0 4px rgba(212, 165, 116, 0.3))' : 'none'
+              filter: isActive ? 'drop-shadow(0 0 4px rgba(244, 215, 153, 0.3))' : 'none'
             }}
           />
           
           {/* Bottom sand (elapsed time) */}
           <defs>
             <clipPath id="bottomSand">
-              <path d="M25 50 L60 50 L60 55 L85 80 L95 80 L95 85 L25 85 Z" />
+              <path d="M55 55 L60 55 L85 75 L30 75 Z" />
             </clipPath>
           </defs>
           
           <rect
-            x="25"
-            y={85 - bottomSandHeight}
-            width="70"
-            height={bottomSandHeight}
-            fill="#d4a574"
+            x="30"
+            y={75 - bottomSandHeight * 0.83}
+            width="55"
+            height={bottomSandHeight * 0.83}
+            fill="#f4d799"
             clipPath="url(#bottomSand)"
             className="transition-all duration-1000 ease-linear"
           />
@@ -94,7 +94,7 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
                   cx={58 + Math.random() * 4}
                   cy="52"
                   r="0.8"
-                  fill="#d4a574"
+                  fill="#f4d799"
                   opacity="0.8"
                   className="animate-pulse"
                   style={{
@@ -127,7 +127,7 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
                 y1="50"
                 x2="60"
                 y2="55"
-                stroke="#d4a574"
+                stroke="#f4d799"
                 strokeWidth="2"
                 opacity="0.6"
                 className="animate-pulse"
