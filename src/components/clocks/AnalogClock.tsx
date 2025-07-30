@@ -11,7 +11,8 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
   
   // Calculate angles for clock hands
   const minuteAngle = ((totalTime / 60 - minutes) / (totalTime / 60)) * 360;
-  const secondAngle = (60 - seconds) / 60 * 360;
+  // Progress hand shows overall completion progress (0-100%)
+  const progressAngle = (progress / 100) * 360;
 
   return (
     <div className="relative">
@@ -102,16 +103,19 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
             className="transition-all duration-1000 ease-out"
           />
           
-          {/* Second hand */}
+          {/* Progress hand - shows completion toward goal */}
           <line
             x1="100"
             y1="100"
-            x2={100 + 65 * Math.cos((secondAngle - 90) * (Math.PI / 180))}
-            y2={100 + 65 * Math.sin((secondAngle - 90) * (Math.PI / 180))}
-            stroke="hsl(var(--destructive))"
-            strokeWidth="2"
+            x2={100 + 65 * Math.cos((progressAngle - 90) * (Math.PI / 180))}
+            y2={100 + 65 * Math.sin((progressAngle - 90) * (Math.PI / 180))}
+            stroke="hsl(var(--primary))"
+            strokeWidth="3"
             strokeLinecap="round"
-            className="transition-all duration-300 ease-out"
+            className="transition-all duration-1000 ease-out"
+            style={{
+              filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--primary) / 0.4))' : 'none'
+            }}
           />
           
           {/* Center dot */}

@@ -65,11 +65,48 @@ export const Timer = () => {
   }, [isActive, isPaused, timeLeft]);
 
   const playMinuteProgressSound = () => {
-    // Nice approving sound of progress - gentle upward arpeggio
+    // Message notification sound - quick, bright, attention-getting
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const notes = [440, 554.37]; // A4, C#5 - pleasant, approving interval
     
-    notes.forEach((frequency, index) => {
+    // Quick notification beep followed by gentle chime
+    const oscillator1 = audioContext.createOscillator();
+    const oscillator2 = audioContext.createOscillator();
+    const gainNode1 = audioContext.createGain();
+    const gainNode2 = audioContext.createGain();
+    
+    oscillator1.connect(gainNode1);
+    oscillator2.connect(gainNode2);
+    gainNode1.connect(audioContext.destination);
+    gainNode2.connect(audioContext.destination);
+    
+    // First beep - attention grabber
+    oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator1.type = 'sine';
+    gainNode1.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode1.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.02);
+    gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+    oscillator1.start(audioContext.currentTime);
+    oscillator1.stop(audioContext.currentTime + 0.15);
+    
+    // Second tone - pleasant confirmation
+    oscillator2.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+    oscillator2.type = 'sine';
+    gainNode2.gain.setValueAtTime(0, audioContext.currentTime + 0.1);
+    gainNode2.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.12);
+    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+    oscillator2.start(audioContext.currentTime + 0.1);
+    oscillator2.stop(audioContext.currentTime + 0.25);
+    
+    toast("Another minute focused! 💪");
+  };
+
+  const playCalmProgressSound = () => {
+    // Slot machine mid-prize sound - satisfying coin cascade
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Create multiple coin drop sounds with slight timing variations
+    const coinSounds = 8;
+    for (let i = 0; i < coinSounds; i++) {
       setTimeout(() => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -77,48 +114,41 @@ export const Timer = () => {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-        oscillator.type = 'sine';
+        // Random frequency for coin variety (metallic sound range)
+        const baseFreq = 1000 + Math.random() * 500;
+        oscillator.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, audioContext.currentTime + 0.1);
+        oscillator.type = 'triangle'; // More metallic sound
         
         gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
         
         oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-      }, index * 150);
-    });
+        oscillator.stop(audioContext.currentTime + 0.2);
+      }, i * 50 + Math.random() * 30); // Staggered timing with randomness
+    }
     
-    toast("Nice progress! 👍");
-  };
-
-  const playCalmProgressSound = () => {
-    // Calming but reassuring sound - perfect fifth harmony
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const fundamentalFreq = 349.23; // F4
-    const harmonies = [349.23, 523.25, 659.25]; // F4, C5, E5 - calming triad
+    // Add a satisfying bell at the end
+    setTimeout(() => {
+      const bellOsc = audioContext.createOscillator();
+      const bellGain = audioContext.createGain();
+      
+      bellOsc.connect(bellGain);
+      bellGain.connect(audioContext.destination);
+      
+      bellOsc.frequency.setValueAtTime(1200, audioContext.currentTime);
+      bellOsc.type = 'sine';
+      
+      bellGain.gain.setValueAtTime(0, audioContext.currentTime);
+      bellGain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+      bellGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+      
+      bellOsc.start(audioContext.currentTime);
+      bellOsc.stop(audioContext.currentTime + 0.8);
+    }, 400);
     
-    // Play harmonies together for a rich, calming sound
-    harmonies.forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-      oscillator.type = 'sine';
-      
-      const volume = index === 0 ? 0.2 : 0.12; // Fundamental slightly louder
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.2);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.2);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 1.2);
-    });
-    
-    toast("Excellent focus! Keep it up! ✨");
+    toast("🎰 5 minutes milestone! You're on fire! 🔥");
   };
 
   const playCompletionSound = () => {

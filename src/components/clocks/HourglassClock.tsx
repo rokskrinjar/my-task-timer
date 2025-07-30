@@ -12,9 +12,9 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate sand levels
-  const topSandHeight = (progress / 100) * 60; // Max height of 60
-  const bottomSandHeight = ((100 - progress) / 100) * 60;
+  // Calculate sand levels - top decreases as time passes, bottom increases
+  const topSandHeight = ((100 - progress) / 100) * 60; // Remaining sand in top
+  const bottomSandHeight = (progress / 100) * 60; // Accumulated sand in bottom
 
   return (
     <div className="relative">
@@ -57,9 +57,9 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
           
           <rect
             x="25"
-            y={15 + topSandHeight}
+            y={15 + (60 - topSandHeight)}
             width="70"
-            height={60 - topSandHeight}
+            height={topSandHeight}
             fill="hsl(var(--primary))"
             clipPath="url(#topSand)"
             className="transition-all duration-1000 ease-linear"
