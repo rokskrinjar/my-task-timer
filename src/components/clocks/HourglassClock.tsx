@@ -60,11 +60,11 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
             y={15 + (60 - topSandHeight)}
             width="70"
             height={topSandHeight}
-            fill="hsl(var(--primary))"
+            fill="hsl(var(--foreground))"
             clipPath="url(#topSand)"
             className="transition-all duration-1000 ease-linear"
             style={{
-              filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--primary) / 0.3))' : 'none'
+              filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--foreground) / 0.3))' : 'none'
             }}
           />
           
@@ -80,7 +80,7 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
             y={85 - bottomSandHeight}
             width="70"
             height={bottomSandHeight}
-            fill="hsl(var(--muted))"
+            fill="hsl(var(--foreground))"
             clipPath="url(#bottomSand)"
             className="transition-all duration-1000 ease-linear"
           />
@@ -89,12 +89,12 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
           {isActive && (
             <g>
               {Array.from({ length: 8 }, (_, i) => (
-                <circle
+               <circle
                   key={i}
                   cx={58 + Math.random() * 4}
                   cy="52"
                   r="0.8"
-                  fill="hsl(var(--primary))"
+                  fill="hsl(var(--foreground))"
                   opacity="0.8"
                   className="animate-pulse"
                   style={{
@@ -127,7 +127,7 @@ export const HourglassClock = ({ timeLeft, totalTime, progress, isActive }: Hour
                 y1="50"
                 x2="60"
                 y2="55"
-                stroke="hsl(var(--primary))"
+                stroke="hsl(var(--foreground))"
                 strokeWidth="2"
                 opacity="0.6"
                 className="animate-pulse"

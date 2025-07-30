@@ -9,10 +9,13 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   
-  // Calculate angles for clock hands
-  const minuteAngle = ((totalTime / 60 - minutes) / (totalTime / 60)) * 360;
-  // Progress hand shows overall completion progress (0-100%)
-  const progressAngle = (progress / 100) * 360;
+  // Calculate normal clock hand angles
+  const secondAngle = (seconds / 60) * 360; // 0-360 degrees for 60 seconds
+  const minuteAngle = (minutes / 60) * 360; // 0-360 degrees for 60 minutes
+  
+  // Calculate target minute mark position
+  const targetMinutes = Math.floor(totalTime / 60);
+  const targetAngle = (targetMinutes / 60) * 360;
 
   return (
     <div className="relative">
@@ -103,16 +106,27 @@ export const AnalogClock = ({ timeLeft, totalTime, progress, isActive }: AnalogC
             className="transition-all duration-1000 ease-out"
           />
           
-          {/* Progress hand - shows completion toward goal */}
+          {/* Target minute mark */}
+          <circle
+            cx={100 + 75 * Math.cos((targetAngle - 90) * (Math.PI / 180))}
+            cy={100 + 75 * Math.sin((targetAngle - 90) * (Math.PI / 180))}
+            r="4"
+            fill="hsl(var(--primary))"
+            stroke="hsl(var(--background))"
+            strokeWidth="2"
+            className="drop-shadow-sm"
+          />
+          
+          {/* Seconds hand */}
           <line
             x1="100"
             y1="100"
-            x2={100 + 65 * Math.cos((progressAngle - 90) * (Math.PI / 180))}
-            y2={100 + 65 * Math.sin((progressAngle - 90) * (Math.PI / 180))}
+            x2={100 + 70 * Math.cos((secondAngle - 90) * (Math.PI / 180))}
+            y2={100 + 70 * Math.sin((secondAngle - 90) * (Math.PI / 180))}
             stroke="hsl(var(--primary))"
-            strokeWidth="3"
+            strokeWidth="2"
             strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+            className="transition-all duration-200 ease-out"
             style={{
               filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--primary) / 0.4))' : 'none'
             }}
