@@ -34,11 +34,14 @@ const Index = () => {
               FocusFlow
             </Link>
             <nav className="hidden md:flex items-center gap-6">
+              <Link to="/" className="text-sm font-medium text-primary border-b-2 border-primary pb-1">
+                Timer
+              </Link>
               <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Beat Procrastination
               </Link>
-              <Link to="/" className="text-sm font-medium text-primary border-b-2 border-primary pb-1">
-                Timer
+              <Link to="/progress" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Track Progress
               </Link>
             </nav>
           </div>
