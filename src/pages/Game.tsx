@@ -532,12 +532,11 @@ const Game = () => {
     }
   };
 
-  const submitAnswer = async (answer: string, lifeline?: string) => {
+  const submitAnswer = async (answer: string) => {
     if (!currentQuestion || hasAnswered) return;
     
     console.log('🎯 submitAnswer called with:', { 
       answer, 
-      lifeline, 
       user: user?.id, 
       isGuest, 
       guestPlayer: guestPlayer?.displayName,
@@ -552,7 +551,7 @@ const Game = () => {
       question_id: currentQuestion.id,
       user_answer: answer,
       is_correct: isCorrect,
-      lifeline_used: lifeline
+      lifeline_used: null // Always null for regular answers
     };
     
     console.log('📝 Submitting answer data:', answerData);
@@ -616,26 +615,7 @@ const Game = () => {
       });
     }
 
-    // Update lifelines used count if lifeline was used
-    if (lifeline && currentParticipant) {
-      const updateData = {
-        lifelines_used: (currentParticipant.lifelines_used || 0) + 1
-      };
-      
-      const updateCondition = user ? 
-        { game_id: gameId, user_id: user.id } :
-        { game_id: gameId, display_name: guestPlayer?.displayName };
-
-      const { error: lifelineError } = await supabase
-        .from('game_participants')
-        .update(updateData)
-        .match(updateCondition);
-
-      if (lifelineError) {
-        console.error('Error updating lifelines:', lifelineError);
-      }
-    }
-
+    // Note: Lifeline count is updated when lifelines are used, not when answers are submitted
     setHasAnswered(true);
     setSelectedAnswer(answer);
     setTimerActive(false);
