@@ -28,6 +28,7 @@ interface Game {
   host_id: string;
   current_question_number: number;
   current_question_id?: string;
+  category?: string;
 }
 
 interface Participant {
@@ -189,10 +190,11 @@ const Game = () => {
     console.log('📋 Fetched game data:', gameData);
     setGame(gameData);
     
-    await Promise.all([
-      fetchParticipants(),
-      fetchQuestions()
-    ]);
+    // Fetch participants first
+    await fetchParticipants();
+    
+    // Then fetch questions based on the game category
+    await fetchQuestionsForGame(gameData);
     
     // Only fetch answers if game is active and has a current question
     if (gameData.status === 'active' && gameData.current_question_id) {
@@ -254,14 +256,34 @@ const Game = () => {
     setParticipants(participantsWithProfiles);
   };
 
-  const fetchQuestions = async () => {
+  const fetchQuestionsForGame = async (gameData: Game) => {
+    if (!gameData?.category) {
+      console.log('⚠️ No category found for game, using default');
+      // Fallback to fetch all questions if no category
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .order('difficulty_order');
+      
+      if (!error && data) {
+        console.log('✅ Fetched fallback questions. Count:', data.length);
+        setQuestions(data);
+      }
+      return;
+    }
+    
+    console.log('🔍 Fetching questions for category:', gameData.category);
     const { data, error } = await supabase
       .from('questions')
       .select('*')
+      .eq('category', gameData.category)
       .order('difficulty_order');
 
     if (!error && data) {
+      console.log('✅ Fetched questions for category:', gameData.category, 'Count:', data.length);
       setQuestions(data);
+    } else {
+      console.error('❌ Error fetching questions:', error);
     }
   };
 
@@ -645,6 +667,11 @@ const Game = () => {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold">Koda: {game.game_code}</h1>
+            {game.category && (
+              <Badge variant="outline" className="text-sm">
+                {game.category}
+              </Badge>
+            )}
             <Badge variant={game.status === 'active' ? 'default' : 'secondary'}>
               {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
             </Badge>
@@ -665,13 +692,16 @@ const Game = () => {
                 <CardHeader>
                   <CardTitle>Čakanje na začetek igre</CardTitle>
                   <CardDescription>
+                    {game.category && (
+                      <span className="block mb-2">Kategorija: <strong>{game.category}</strong></span>
+                    )}
                     {participants.length === 1 ? 'Igrate sami. Pripravljeni za izziv?' : 'Čakamo, da se vsi igralci pridružijo igri.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isHost && (
-                    <Button onClick={startGame} disabled={participants.length < 1}>
-                      Začni igro
+                    <Button onClick={startGame} disabled={participants.length < 1 || questions.length === 0}>
+                      {questions.length === 0 ? 'Nalaganje vprašanj...' : 'Začni igro'}
                     </Button>
                   )}
                   {!isHost && (

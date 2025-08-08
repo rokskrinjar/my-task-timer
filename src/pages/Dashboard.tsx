@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Users, LogOut, Trophy } from 'lucide-react';
 
@@ -21,6 +23,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Osnovna šola');
   const [myGames, setMyGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -65,6 +68,16 @@ const Dashboard = () => {
     }
   };
 
+  const categories = [
+    'Osnovna šola',
+    'Geografija', 
+    'Živali',
+    'Friends Trivia',
+    'Music',
+    'Movies',
+    'High School'
+  ];
+
   const createGame = async () => {
     console.log('createGame called, user:', user);
     if (!user) return;
@@ -93,7 +106,8 @@ const Dashboard = () => {
       .insert({
         host_id: user.id,
         game_code: codeData,
-        status: 'waiting'
+        status: 'waiting',
+        category: selectedCategory
       })
       .select()
       .single();
@@ -247,7 +261,22 @@ const Dashboard = () => {
                 Ustvarite novo igro in povabite prijatelje
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategorija vprašanj</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Izberite kategorijo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button 
                 onClick={() => {
                   console.log('Create game button clicked');

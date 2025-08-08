@@ -165,6 +165,7 @@ export type Database = {
       }
       games: {
         Row: {
+          category: string | null
           created_at: string
           current_question_id: string | null
           current_question_number: number | null
@@ -177,6 +178,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           current_question_id?: string | null
           current_question_number?: number | null
@@ -189,6 +191,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           current_question_id?: string | null
           current_question_number?: number | null
@@ -243,6 +246,7 @@ export type Database = {
       }
       questions: {
         Row: {
+          category: string
           correct_answer: string
           created_at: string
           difficulty_order: number
@@ -256,6 +260,7 @@ export type Database = {
           subject: string
         }
         Insert: {
+          category?: string
           correct_answer: string
           created_at?: string
           difficulty_order: number
@@ -269,6 +274,7 @@ export type Database = {
           subject: string
         }
         Update: {
+          category?: string
           correct_answer?: string
           created_at?: string
           difficulty_order?: number
