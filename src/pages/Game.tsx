@@ -149,7 +149,7 @@ const Game = () => {
     return () => {
       supabase.removeChannel(gameChannel);
     };
-  }, [user, isGuest, gameId, currentQuestion]);
+  }, [user, isGuest, gameId]);
 
   // Timer effect
   useEffect(() => {
