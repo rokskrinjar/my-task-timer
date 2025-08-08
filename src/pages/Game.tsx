@@ -128,6 +128,12 @@ const Game = () => {
         
         // Use question_id from the payload to avoid stale state issues
         const questionId = (payload.new as any)?.question_id;
+        console.log('🔍 Current state check:', {
+          currentQuestionId: currentQuestion?.id,
+          gameCurrentQuestionId: game?.current_question_id,
+          hasCurrentQuestion: !!currentQuestion
+        });
+        
         if (questionId) {
           console.log('🔄 Calling fetchAnswers from real-time update with questionId from payload:', questionId);
           fetchAnswers(questionId).catch(error => {
@@ -478,9 +484,13 @@ const Game = () => {
       fetchCurrentQuestion(newGameData.current_question_id);
     }
     
-    // If question changed, fetch the new question immediately
+    // If question changed, fetch the new question immediately and reset answers
     if (newGameData.current_question_id && newGameData.current_question_id !== currentQuestion?.id) {
       console.log('Question changed, fetching new question:', newGameData.current_question_id);
+      // Reset answers when question changes
+      setAnswers([]);
+      setHasAnswered(false);
+      setSelectedAnswer('');
       fetchCurrentQuestion(newGameData.current_question_id);
     }
   };
@@ -711,14 +721,18 @@ const Game = () => {
       user: user?.id, 
       isGuest, 
       guestPlayer: guestPlayer?.displayName,
-      currentQuestion: currentQuestion?.id 
+      currentQuestion: currentQuestion?.id,
+      gameCurrentQuestionId: game?.current_question_id
     });
 
-    if (currentQuestion) {
+    // Use either currentQuestion or the current_question_id from game state
+    const questionId = currentQuestion?.id || game?.current_question_id;
+    
+    if (questionId) {
       const lifeline_data = {
         game_id: gameId,
         user_id: user?.id || null,
-        question_id: currentQuestion.id,
+        question_id: questionId, // Use the questionId variable that works for both currentQuestion and game state
         user_answer: '', // Empty answer for lifeline usage
         is_correct: false, // Not applicable for lifeline
         lifeline_used: lifeline_used_value
@@ -744,6 +758,14 @@ const Game = () => {
       }
       
       console.log('✅ Lifeline submitted successfully');
+    } else {
+      console.error('❌ No question ID available for lifeline submission');
+      toast({
+        title: "Napaka",
+        description: "Trenutno vprašanje ni na voljo",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (type === '50_50') {
