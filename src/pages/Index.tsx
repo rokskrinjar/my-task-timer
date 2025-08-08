@@ -9,7 +9,7 @@ const Index = () => {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-xl font-bold hover:text-primary transition-colors">
-              My App
+              Moja Aplikacija
             </Link>
           </div>
           <div className="flex items-center gap-4">
@@ -21,14 +21,14 @@ const Index = () => {
       <main className="container py-16">
         <div className="text-center space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Welcome to Your App
+            Dobrodošli v Vaši Aplikaciji
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start building something amazing. This is your clean slate.
+            Začnite graditi nekaj neverjetnega. To je vaš čist list.
           </p>
           <div className="flex gap-4 justify-center mt-8">
-            <Button size="lg">Get Started</Button>
-            <Button variant="outline" size="lg">Learn More</Button>
+            <Button size="lg">Začni</Button>
+            <Button variant="outline" size="lg">Izvedite Več</Button>
           </div>
         </div>
       </main>
