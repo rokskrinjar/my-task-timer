@@ -94,14 +94,14 @@ const Game = () => {
     // Set up real-time subscriptions
     console.log('Setting up real-time subscriptions for gameId:', gameId);
     const gameChannel = supabase
-      .channel(`game-${gameId}`)
+      .channel(`game-${gameId}-${Math.random()}`) // Unique channel name
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'games',
         filter: `id=eq.${gameId}`
       }, (payload) => {
-        console.log('Real-time game update:', payload);
+        console.log('🔥 Real-time game update:', payload);
         handleGameUpdate(payload);
       })
       .on('postgres_changes', {
@@ -110,8 +110,12 @@ const Game = () => {
         table: 'game_participants',
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
-        console.log('Real-time participants update:', payload);
-        fetchParticipants();
+        console.log('👥 Real-time participants update:', payload);
+        // Force refetch participants to ensure we get latest data
+        setTimeout(() => {
+          console.log('Fetching participants after real-time update...');
+          fetchParticipants();
+        }, 100);
       })
       .on('postgres_changes', {
         event: '*',
@@ -119,11 +123,18 @@ const Game = () => {
         table: 'game_answers',
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
-        console.log('Real-time answers update:', payload);
-        fetchAnswers();
+        console.log('📝 Real-time answers update:', payload);
+        setTimeout(() => {
+          fetchAnswers();
+        }, 100);
       })
       .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
+        console.log('📡 Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to real-time updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Real-time subscription error');
+        }
       });
 
     return () => {
