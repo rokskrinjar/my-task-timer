@@ -576,17 +576,33 @@ const Game = () => {
                         
                         {/* Show correct answer when everyone has answered OR immediately for single player */}
                         {((answers.length === participants.length && participants.length > 0) || (participants.length === 1 && hasAnswered)) && (
-                          <div className="p-4 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                            <p className="font-medium text-green-800 dark:text-green-200">
+                          <div className={`p-4 border rounded-lg ${
+                            selectedAnswer === currentQuestion.correct_answer 
+                              ? 'bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                              : 'bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          }`}>
+                            <p className={`font-medium ${
+                              selectedAnswer === currentQuestion.correct_answer 
+                                ? 'text-green-800 dark:text-green-200' 
+                                : 'text-red-800 dark:text-red-200'
+                            }`}>
                               Pravilen odgovor: {currentQuestion.correct_answer}) {currentQuestion[`option_${currentQuestion.correct_answer.toLowerCase()}` as keyof Question] as string}
                             </p>
                             {participants.length > 1 && (
-                              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                              <div className={`mt-2 text-sm ${
+                                selectedAnswer === currentQuestion.correct_answer 
+                                  ? 'text-green-700 dark:text-green-300' 
+                                  : 'text-red-700 dark:text-red-300'
+                              }`}>
                                 {answers.filter(a => a.is_correct).length} od {participants.length} igralcev je odgovorilo pravilno
                               </div>
                             )}
                             {participants.length === 1 && (
-                              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                              <div className={`mt-2 text-sm ${
+                                selectedAnswer === currentQuestion.correct_answer 
+                                  ? 'text-green-700 dark:text-green-300' 
+                                  : 'text-red-700 dark:text-red-300'
+                              }`}>
                                 {selectedAnswer === currentQuestion.correct_answer ? '✅ Pravilno!' : '❌ Napačno'}
                               </div>
                             )}
