@@ -74,6 +74,131 @@ export type Database = {
         }
         Relationships: []
       }
+      game_answers: {
+        Row: {
+          answered_at: string
+          game_id: string
+          id: string
+          is_correct: boolean | null
+          lifeline_used: string | null
+          question_id: string
+          user_answer: string | null
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string
+          game_id: string
+          id?: string
+          is_correct?: boolean | null
+          lifeline_used?: string | null
+          question_id: string
+          user_answer?: string | null
+          user_id: string
+        }
+        Update: {
+          answered_at?: string
+          game_id?: string
+          id?: string
+          is_correct?: boolean | null
+          lifeline_used?: string | null
+          question_id?: string
+          user_answer?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_answers_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_participants: {
+        Row: {
+          current_score: number | null
+          game_id: string
+          id: string
+          is_host: boolean | null
+          joined_at: string
+          lifelines_used: number | null
+          user_id: string
+        }
+        Insert: {
+          current_score?: number | null
+          game_id: string
+          id?: string
+          is_host?: boolean | null
+          joined_at?: string
+          lifelines_used?: number | null
+          user_id: string
+        }
+        Update: {
+          current_score?: number | null
+          game_id?: string
+          id?: string
+          is_host?: boolean | null
+          joined_at?: string
+          lifelines_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_participants_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          created_at: string
+          current_question_id: string | null
+          current_question_number: number | null
+          finished_at: string | null
+          game_code: string
+          host_id: string
+          id: string
+          max_players: number | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          current_question_id?: string | null
+          current_question_number?: number | null
+          finished_at?: string | null
+          game_code: string
+          host_id: string
+          id?: string
+          max_players?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          current_question_id?: string | null
+          current_question_number?: number | null
+          finished_at?: string | null
+          game_code?: string
+          host_id?: string
+          id?: string
+          max_players?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -110,6 +235,48 @@ export type Database = {
           skill_level?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          difficulty_order: number
+          grade_level: number
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          subject: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          difficulty_order: number
+          grade_level: number
+          id?: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          subject: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          difficulty_order?: number
+          grade_level?: number
+          id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_text?: string
+          subject?: string
         }
         Relationships: []
       }
@@ -157,6 +324,10 @@ export type Database = {
       check_and_award_achievements: {
         Args: { user_uuid: string }
         Returns: undefined
+      }
+      generate_game_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {
