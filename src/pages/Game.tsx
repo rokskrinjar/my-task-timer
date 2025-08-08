@@ -177,9 +177,13 @@ const Game = () => {
     
     await Promise.all([
       fetchParticipants(),
-      fetchQuestions(),
-      fetchAnswers()
+      fetchQuestions()
     ]);
+    
+    // Only fetch answers if game is active and has a current question
+    if (gameData.status === 'active' && gameData.current_question_id) {
+      await fetchAnswers();
+    }
     
     if (gameData.current_question_id) {
       await fetchCurrentQuestion(gameData.current_question_id);
@@ -263,15 +267,25 @@ const Game = () => {
   };
 
   const fetchAnswers = async () => {
-    if (!game?.current_question_id) return;
+    if (!game?.current_question_id) {
+      console.log('No current question ID, skipping answers fetch');
+      return;
+    }
     
+    console.log('Fetching answers for question:', game.current_question_id);
     const { data, error } = await supabase
       .from('game_answers')
       .select('*')
       .eq('game_id', gameId)
       .eq('question_id', game.current_question_id);
 
-    if (!error && data) {
+    if (error) {
+      console.error('Error fetching answers:', error);
+      return;
+    }
+
+    console.log('Fetched answers:', data);
+    if (data) {
       setAnswers(data);
       
       // Check if current user has answered
@@ -288,9 +302,20 @@ const Game = () => {
   };
 
   const handleGameUpdate = (payload: any) => {
-    console.log('Processing game update:', payload);
+    console.log('🔥 Processing game update:', payload);
     const newGameData = payload.new;
-    setGame(newGameData);
+    
+    // Update game state immediately
+    setGame(prev => {
+      console.log('Updating game state from:', prev, 'to:', newGameData);
+      return newGameData;
+    });
+    
+    // If status changed to active and we have a question, fetch it
+    if (newGameData.status === 'active' && newGameData.current_question_id) {
+      console.log('Game became active, fetching first question:', newGameData.current_question_id);
+      fetchCurrentQuestion(newGameData.current_question_id);
+    }
     
     // If question changed, fetch the new question immediately
     if (newGameData.current_question_id && newGameData.current_question_id !== currentQuestion?.id) {
