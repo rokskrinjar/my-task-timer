@@ -709,9 +709,14 @@ const Game = () => {
                             Vaš odgovor: {selectedAnswer || 'Ni odgovora'}
                           </p>
                           {participants.length > 1 ? (
-                            <p className="text-sm text-muted-foreground">
-                              Čakamo na ostale igralce...
-                            </p>
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Čakamo na ostale igralce...
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Debug: {answers.length}/{participants.length} odgovorov
+                              </p>
+                            </div>
                           ) : (
                             <p className="text-sm text-muted-foreground">
                               Odgovor oddan!
@@ -720,7 +725,20 @@ const Game = () => {
                         </div>
                         
                         {/* Show correct answer when everyone has answered OR immediately for single player */}
-                        {((answers.length === participants.length && participants.length > 0) || (participants.length === 1 && hasAnswered)) && (
+                        {(() => {
+                          const allAnswered = answers.length === participants.length && participants.length > 0;
+                          const singlePlayer = participants.length === 1 && hasAnswered;
+                          console.log('🎯 Answer display logic:', { 
+                            allAnswered, 
+                            singlePlayer, 
+                            answersLength: answers.length, 
+                            participantsLength: participants.length,
+                            shouldShow: allAnswered || singlePlayer,
+                            answers: answers,
+                            participants: participants
+                          });
+                          return allAnswered || singlePlayer;
+                        })() && (
                           <div className={`p-4 border rounded-lg ${
                             selectedAnswer === currentQuestion.correct_answer 
                               ? 'bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
