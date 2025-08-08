@@ -524,15 +524,22 @@ const Game = () => {
                           </p>
                         </div>
                         
-                        {/* Show correct answer when everyone has answered */}
-                        {answers.length === participants.length && participants.length > 0 && (
+                        {/* Show correct answer when everyone has answered OR immediately for single player */}
+                        {((answers.length === participants.length && participants.length > 0) || (participants.length === 1 && hasAnswered)) && (
                           <div className="p-4 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                             <p className="font-medium text-green-800 dark:text-green-200">
                               Pravilen odgovor: {currentQuestion.correct_answer}) {currentQuestion[`option_${currentQuestion.correct_answer.toLowerCase()}` as keyof Question] as string}
                             </p>
-                            <div className="mt-2 text-sm text-green-700 dark:text-green-300">
-                              {answers.filter(a => a.is_correct).length} od {participants.length} igralcev je odgovorilo pravilno
-                            </div>
+                            {participants.length > 1 && (
+                              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                                {answers.filter(a => a.is_correct).length} od {participants.length} igralcev je odgovorilo pravilno
+                              </div>
+                            )}
+                            {participants.length === 1 && (
+                              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                                {selectedAnswer === currentQuestion.correct_answer ? '✅ Pravilno!' : '❌ Napačno'}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
