@@ -819,7 +819,7 @@ const Game = () => {
 
   const handleTimeUp = () => {
     if (!hasAnswered) {
-      submitAnswer('', 'timeout');
+      submitAnswer(''); // Remove the timeout lifeline parameter since it's not allowed
     }
     setTimerActive(false);
   };
