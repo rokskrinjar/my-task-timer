@@ -32,17 +32,18 @@ interface Game {
 
 interface Participant {
   id: string;
-  user_id: string;
+  user_id: string | null;
   current_score: number;
   lifelines_used: number;
   is_host: boolean;
+  display_name?: string;
   profiles?: {
     display_name: string;
   };
 }
 
 interface GameAnswer {
-  user_id: string;
+  user_id: string | null;
   user_answer: string;
   is_correct: boolean;
   lifeline_used?: string;
@@ -53,6 +54,12 @@ const Game = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check if this is a guest player
+  const guestPlayer = sessionStorage.getItem('guestPlayer') ? 
+    JSON.parse(sessionStorage.getItem('guestPlayer') || '{}') : null;
+  
+  const isGuest = !user && guestPlayer?.gameId === gameId;
   
   const [game, setGame] = useState<Game | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -68,11 +75,19 @@ const Game = () => {
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerActive, setTimerActive] = useState(false);
 
-  const currentParticipant = participants.find(p => p.user_id === user?.id);
+  const currentParticipant = participants.find(p => 
+    user ? p.user_id === user.id : p.display_name === guestPlayer?.displayName
+  );
   const isHost = currentParticipant?.is_host || false;
 
   useEffect(() => {
-    if (!user || !gameId) return;
+    // Redirect to join page if not authenticated and not a guest
+    if (!user && !isGuest) {
+      navigate('/join');
+      return;
+    }
+    
+    if ((!user && !isGuest) || !gameId) return;
     
     fetchGameData();
     
@@ -102,7 +117,7 @@ const Game = () => {
     return () => {
       supabase.removeChannel(gameChannel);
     };
-  }, [user, gameId]);
+  }, [user, isGuest, gameId]);
 
   // Timer effect
   useEffect(() => {
@@ -160,19 +175,28 @@ const Game = () => {
 
     if (participantsError || !participantsData) return;
 
-    // Then fetch profiles for each participant
+    // Then fetch profiles for each participant (only for authenticated users)
     const participantsWithProfiles = await Promise.all(
       participantsData.map(async (participant) => {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('user_id', participant.user_id)
-          .single();
+        if (participant.user_id) {
+          // Authenticated user - fetch profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', participant.user_id)
+            .single();
 
-        return {
-          ...participant,
-          profiles: profileData || { display_name: 'Neimenovan igralec' }
-        };
+          return {
+            ...participant,
+            profiles: profileData || { display_name: 'Neimenovan igralec' }
+          };
+        } else {
+          // Guest user - use display_name from participant record
+          return {
+            ...participant,
+            profiles: { display_name: participant.display_name || 'Gost' }
+          };
+        }
       })
     );
 
@@ -221,7 +245,10 @@ const Game = () => {
       setAnswers(data);
       
       // Check if current user has answered
-      const userAnswer = data.find(a => a.user_id === user?.id);
+      const userAnswer = user ? 
+        data.find(a => a.user_id === user.id) :
+        data.find(a => a.user_id === null); // Guest players have null user_id
+      
       if (userAnswer) {
         setHasAnswered(true);
         setSelectedAnswer(userAnswer.user_answer || '');
@@ -304,15 +331,20 @@ const Game = () => {
       return;
     }
 
-    // Update participant score
-    if (isCorrect) {
+    // Update participant score (only for correct answers)
+    if (isCorrect && currentParticipant) {
+      const updateData = {
+        current_score: (currentParticipant.current_score || 0) + 1
+      };
+      
+      const updateCondition = user ? 
+        { game_id: gameId, user_id: user.id } :
+        { game_id: gameId, display_name: guestPlayer?.displayName };
+
       const { error: scoreError } = await supabase
         .from('game_participants')
-        .update({
-          current_score: (currentParticipant?.current_score || 0) + 1
-        })
-        .eq('game_id', gameId)
-        .eq('user_id', user?.id);
+        .update(updateData)
+        .match(updateCondition);
 
       if (scoreError) {
         console.error('Error updating score:', scoreError);
@@ -320,14 +352,19 @@ const Game = () => {
     }
 
     // Update lifelines used count if lifeline was used
-    if (lifeline) {
+    if (lifeline && currentParticipant) {
+      const updateData = {
+        lifelines_used: (currentParticipant.lifelines_used || 0) + 1
+      };
+      
+      const updateCondition = user ? 
+        { game_id: gameId, user_id: user.id } :
+        { game_id: gameId, display_name: guestPlayer?.displayName };
+
       const { error: lifelineError } = await supabase
         .from('game_participants')
-        .update({
-          lifelines_used: (currentParticipant?.lifelines_used || 0) + 1
-        })
-        .eq('game_id', gameId)
-        .eq('user_id', user?.id);
+        .update(updateData)
+        .match(updateCondition);
 
       if (lifelineError) {
         console.error('Error updating lifelines:', lifelineError);
@@ -681,8 +718,8 @@ const Game = () => {
                   <CardDescription>Rezultati končne igre</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button onClick={() => navigate('/dashboard')}>
-                    Nazaj na glavno stran
+                  <Button onClick={() => isGuest ? navigate('/join') : navigate('/dashboard')}>
+                    {isGuest ? 'Pridruži se novi igri' : 'Nazaj na glavno stran'}
                   </Button>
                 </CardContent>
               </Card>
@@ -704,7 +741,9 @@ const Game = () => {
                     <div
                       key={participant.id}
                       className={`flex items-center justify-between p-3 rounded-lg ${
-                        participant.user_id === user?.id ? 'bg-accent' : 'bg-muted/50'
+                        (user && participant.user_id === user.id) || 
+                        (!user && participant.display_name === guestPlayer?.displayName) 
+                          ? 'bg-accent' : 'bg-muted/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">

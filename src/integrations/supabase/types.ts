@@ -125,30 +125,33 @@ export type Database = {
       game_participants: {
         Row: {
           current_score: number | null
+          display_name: string | null
           game_id: string
           id: string
           is_host: boolean | null
           joined_at: string
           lifelines_used: number | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           current_score?: number | null
+          display_name?: string | null
           game_id: string
           id?: string
           is_host?: boolean | null
           joined_at?: string
           lifelines_used?: number | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           current_score?: number | null
+          display_name?: string | null
           game_id?: string
           id?: string
           is_host?: boolean | null
           joined_at?: string
           lifelines_used?: number | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

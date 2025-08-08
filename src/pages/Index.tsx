@@ -50,10 +50,10 @@ const Index = () => {
           </p>
           <div className="flex gap-4 justify-center mt-8">
             <Button size="lg" asChild>
-              <Link to="/auth">Začni igrati</Link>
+              <Link to="/join">Pridruži se igri</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link to="/auth">Prijavite se</Link>
+              <Link to="/auth">Ustvari igro</Link>
             </Button>
           </div>
         </div>
