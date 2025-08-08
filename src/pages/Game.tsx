@@ -92,6 +92,7 @@ const Game = () => {
     fetchGameData();
     
     // Set up real-time subscriptions
+    console.log('Setting up real-time subscriptions for gameId:', gameId);
     const gameChannel = supabase
       .channel(`game-${gameId}`)
       .on('postgres_changes', {
@@ -99,20 +100,31 @@ const Game = () => {
         schema: 'public',
         table: 'games',
         filter: `id=eq.${gameId}`
-      }, handleGameUpdate)
+      }, (payload) => {
+        console.log('Real-time game update:', payload);
+        handleGameUpdate(payload);
+      })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'game_participants',
         filter: `game_id=eq.${gameId}`
-      }, fetchParticipants)
+      }, (payload) => {
+        console.log('Real-time participants update:', payload);
+        fetchParticipants();
+      })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'game_answers',
         filter: `game_id=eq.${gameId}`
-      }, fetchAnswers)
-      .subscribe();
+      }, (payload) => {
+        console.log('Real-time answers update:', payload);
+        fetchAnswers();
+      })
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(gameChannel);
@@ -166,6 +178,7 @@ const Game = () => {
   };
 
   const fetchParticipants = async () => {
+    console.log('Fetching participants for game:', gameId);
     // First fetch participants
     const { data: participantsData, error: participantsError } = await supabase
       .from('game_participants')
@@ -173,7 +186,12 @@ const Game = () => {
       .eq('game_id', gameId)
       .order('current_score', { ascending: false });
 
-    if (participantsError || !participantsData) return;
+    if (participantsError || !participantsData) {
+      console.error('Error fetching participants:', participantsError);
+      return;
+    }
+
+    console.log('Fetched participants:', participantsData);
 
     // Then fetch profiles for each participant (only for authenticated users)
     const participantsWithProfiles = await Promise.all(
@@ -200,6 +218,7 @@ const Game = () => {
       })
     );
 
+    console.log('Participants with profiles:', participantsWithProfiles);
     setParticipants(participantsWithProfiles);
   };
 
@@ -258,10 +277,14 @@ const Game = () => {
   };
 
   const handleGameUpdate = (payload: any) => {
-    setGame(payload.new);
+    console.log('Processing game update:', payload);
+    const newGameData = payload.new;
+    setGame(newGameData);
     
-    if (payload.new.current_question_id && payload.new.current_question_id !== currentQuestion?.id) {
-      fetchCurrentQuestion(payload.new.current_question_id);
+    // If question changed, fetch the new question immediately
+    if (newGameData.current_question_id && newGameData.current_question_id !== currentQuestion?.id) {
+      console.log('Question changed, fetching new question:', newGameData.current_question_id);
+      fetchCurrentQuestion(newGameData.current_question_id);
     }
   };
 
