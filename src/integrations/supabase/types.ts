@@ -83,7 +83,7 @@ export type Database = {
           lifeline_used: string | null
           question_id: string
           user_answer: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           answered_at?: string
@@ -93,7 +93,7 @@ export type Database = {
           lifeline_used?: string | null
           question_id: string
           user_answer?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           answered_at?: string
@@ -103,7 +103,7 @@ export type Database = {
           lifeline_used?: string | null
           question_id?: string
           user_answer?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
