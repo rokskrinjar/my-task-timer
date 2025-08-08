@@ -51,14 +51,17 @@ const Dashboard = () => {
   };
 
   const createGame = async () => {
+    console.log('createGame called, user:', user);
     if (!user) return;
     
     setLoading(true);
     
     // Generate game code
+    console.log('Generating game code...');
     const { data: codeData, error: codeError } = await supabase
       .rpc('generate_game_code');
     
+    console.log('Game code result:', { codeData, codeError });
     if (codeError) {
       toast({
         title: "Napaka",
@@ -210,7 +213,10 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <Button 
-                onClick={createGame} 
+                onClick={() => {
+                  console.log('Create game button clicked');
+                  createGame();
+                }} 
                 disabled={loading}
                 className="w-full"
               >
