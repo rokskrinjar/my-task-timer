@@ -380,20 +380,34 @@ const Game = () => {
   const submitAnswer = async (answer: string, lifeline?: string) => {
     if (!currentQuestion || hasAnswered) return;
     
+    console.log('🎯 submitAnswer called with:', { 
+      answer, 
+      lifeline, 
+      user: user?.id, 
+      isGuest, 
+      guestPlayer: guestPlayer?.displayName,
+      currentQuestion: currentQuestion.id 
+    });
+    
     const isCorrect = answer === currentQuestion.correct_answer;
+    
+    const answerData = {
+      game_id: gameId,
+      user_id: user?.id || null, // Explicitly set null for guests
+      question_id: currentQuestion.id,
+      user_answer: answer,
+      is_correct: isCorrect,
+      lifeline_used: lifeline
+    };
+    
+    console.log('📝 Submitting answer data:', answerData);
     
     const { error } = await supabase
       .from('game_answers')
-      .insert({
-        game_id: gameId,
-        user_id: user?.id,
-        question_id: currentQuestion.id,
-        user_answer: answer,
-        is_correct: isCorrect,
-        lifeline_used: lifeline
-      });
+      .insert(answerData);
 
     if (error) {
+      console.error('❌ Answer submission error:', error);
       toast({
         title: "Napaka",
         description: "Napaka pri oddaji odgovora",
@@ -401,6 +415,8 @@ const Game = () => {
       });
       return;
     }
+    
+    console.log('✅ Answer submitted successfully');
 
     // Update participant score (only for correct answers)
     if (isCorrect && currentParticipant) {
