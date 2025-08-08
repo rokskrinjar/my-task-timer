@@ -20,18 +20,28 @@ const JoinGame = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   
-  console.log('JoinGame state:', { gameCode, displayName, loading });
+  console.log('About to render, current state:', { gameCode, displayName, loading });
   
   // Pre-fill game code from URL if provided
   const urlGameCode = searchParams.get('code');
   
+  
   useEffect(() => {
-    if (urlGameCode) {
-      setGameCode(urlGameCode.toUpperCase());
+    console.log('useEffect running...');
+    try {
+      const urlGameCode = searchParams.get('code');
+      if (urlGameCode) {
+        console.log('Setting game code from URL:', urlGameCode);
+        setGameCode(urlGameCode.toUpperCase());
+      }
+      console.log('useEffect completed successfully');
+    } catch (error) {
+      console.error('Error in useEffect:', error);
     }
-  }, [urlGameCode]);
+  }, [searchParams]);
 
   const handleJoinGame = async (e: React.FormEvent) => {
+    console.log('=== handleJoinGame called ===');
     e.preventDefault();
     
     console.log('Join game clicked:', { gameCode: gameCode.trim(), displayName: displayName.trim() });
