@@ -131,7 +131,7 @@ const Game = () => {
         const questionId = currentQuestion?.id || game?.current_question_id;
         if (questionId) {
           console.log('🔄 Calling fetchAnswers from real-time update with questionId:', questionId);
-          fetchAnswers().catch(error => {
+          fetchAnswers(questionId).catch(error => {
             console.error('❌ fetchAnswers failed from real-time update:', error);
           });
         } else {
@@ -206,7 +206,7 @@ const Game = () => {
       // First fetch the current question, then fetch answers
       await fetchCurrentQuestion(gameData.current_question_id);
       console.log('🔄 After fetchCurrentQuestion, currentQuestion state is now available for fetchAnswers');
-      await fetchAnswers();
+      await fetchAnswers(gameData.current_question_id);
     } else {
       console.log('⚠️ Skipping question/answers fetch. Status:', gameData.status, 'QuestionId:', gameData.current_question_id);
     }
@@ -293,8 +293,8 @@ const Game = () => {
     }
   };
 
-  const fetchAnswers = async () => {
-    const questionId = currentQuestion?.id || game?.current_question_id;
+  const fetchAnswers = async (providedQuestionId?: string) => {
+    const questionId = providedQuestionId || currentQuestion?.id || game?.current_question_id;
     if (!questionId) {
       console.log('❌ No current question ID, skipping answers fetch. Game:', game, 'CurrentQuestion:', currentQuestion);
       return;
