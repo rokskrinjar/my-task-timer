@@ -121,21 +121,16 @@ const Game = () => {
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
         console.log('📝 Real-time answers update received:', payload);
-        console.log('🔍 Current state check:', {
-          currentQuestionId: currentQuestion?.id,
-          gameCurrentQuestionId: game?.current_question_id,
-          hasCurrentQuestion: !!currentQuestion?.id
-        });
         
-        // Always try to fetch answers if we have any current question reference
-        const questionId = currentQuestion?.id || game?.current_question_id;
+        // Use question_id from the payload to avoid stale state issues
+        const questionId = (payload.new as any)?.question_id;
         if (questionId) {
-          console.log('🔄 Calling fetchAnswers from real-time update with questionId:', questionId);
+          console.log('🔄 Calling fetchAnswers from real-time update with questionId from payload:', questionId);
           fetchAnswers(questionId).catch(error => {
             console.error('❌ fetchAnswers failed from real-time update:', error);
           });
         } else {
-          console.log('⚠️ No current question available, skipping fetchAnswers from real-time update');
+          console.log('⚠️ No question_id in payload, skipping fetchAnswers from real-time update');
         }
       })
       .subscribe((status) => {
