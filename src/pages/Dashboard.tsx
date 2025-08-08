@@ -133,6 +133,7 @@ const Dashboard = () => {
   };
 
   const joinGame = async () => {
+    console.log('=== Dashboard joinGame called ===', { gameCode, playerName, user });
     if (!user || !gameCode.trim() || !playerName.trim()) return;
     
     setLoading(true);
@@ -285,7 +286,10 @@ const Dashboard = () => {
                 maxLength={50}
               />
               <Button 
-                onClick={joinGame} 
+                onClick={() => {
+                  console.log('Dashboard join button clicked!', { gameCode, playerName });
+                  joinGame();
+                }} 
                 disabled={loading || !gameCode.trim() || !playerName.trim()}
                 className="w-full"
               >
