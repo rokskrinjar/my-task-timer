@@ -286,9 +286,13 @@ const Game = () => {
     console.log('📝 Fetching answers for:', { 
       gameId, 
       questionId: game.current_question_id,
-      gameStatus: game.status 
+      gameStatus: game.status,
+      user: user?.id,
+      isGuest: isGuest,
+      authUid: 'will be null for guests'
     });
     
+    console.log('🔍 Making query to game_answers...');
     const { data, error } = await supabase
       .from('game_answers')
       .select('*')
