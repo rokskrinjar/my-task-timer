@@ -340,13 +340,17 @@ const Game = () => {
   };
 
   const nextQuestion = async () => {
+    console.log('nextQuestion called, isHost:', isHost, 'current game:', game);
     if (!isHost || !game) return;
     
     const nextQuestionNumber = game.current_question_number + 1;
     const nextQuestion = questions[nextQuestionNumber - 1];
     
+    console.log('Next question number:', nextQuestionNumber, 'Next question:', nextQuestion);
+    
     if (!nextQuestion) {
       // End game
+      console.log('No more questions, ending game');
       const { error } = await supabase
         .from('games')
         .update({
@@ -357,11 +361,18 @@ const Game = () => {
 
       if (error) {
         console.error('Error ending game:', error);
+      } else {
+        // Update local state immediately
+        setGame(prev => prev ? {
+          ...prev,
+          status: 'finished'
+        } : null);
       }
       
       return;
     }
     
+    console.log('Updating to next question...');
     const { error } = await supabase
       .from('games')
       .update({
@@ -370,12 +381,28 @@ const Game = () => {
       })
       .eq('id', gameId);
 
+    console.log('Next question update result:', error ? 'ERROR: ' + error.message : 'SUCCESS');
+
     if (error) {
       toast({
         title: "Napaka",
         description: "Napaka pri prehodu na naslednje vprašanje",
         variant: "destructive",
       });
+    } else {
+      // Immediately show the next question instead of waiting for realtime update
+      console.log('Immediately showing next question');
+      await fetchCurrentQuestion(nextQuestion.id);
+      
+      // Update local game state immediately
+      setGame(prev => prev ? {
+        ...prev,
+        current_question_id: nextQuestion.id,
+        current_question_number: nextQuestionNumber
+      } : null);
+      
+      // Reset answers for new question
+      setAnswers([]);
     }
   };
 
