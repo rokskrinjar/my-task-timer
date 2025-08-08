@@ -202,9 +202,13 @@ const Game = () => {
     // Only fetch answers if game is active and has a current question
     if (gameData.status === 'active' && gameData.current_question_id) {
       console.log('Game is active, fetching current question and answers');
+      console.log('🔍 About to call fetchCurrentQuestion with:', gameData.current_question_id);
       // First fetch the current question, then fetch answers
       await fetchCurrentQuestion(gameData.current_question_id);
+      console.log('🔄 After fetchCurrentQuestion, currentQuestion state is now available for fetchAnswers');
       await fetchAnswers();
+    } else {
+      console.log('⚠️ Skipping question/answers fetch. Status:', gameData.status, 'QuestionId:', gameData.current_question_id);
     }
     
     setLoading(false);
@@ -267,13 +271,16 @@ const Game = () => {
   };
 
   const fetchCurrentQuestion = async (questionId: string) => {
+    console.log('🔍 fetchCurrentQuestion called with questionId:', questionId);
     const { data, error } = await supabase
       .from('questions')
       .select('*')
       .eq('id', questionId)
       .single();
 
+    console.log('📋 fetchCurrentQuestion result:', { data, error });
     if (!error && data) {
+      console.log('✅ Setting currentQuestion to:', data);
       setCurrentQuestion(data);
       setHasAnswered(false);
       setSelectedAnswer('');
@@ -281,6 +288,8 @@ const Game = () => {
       setTimerActive(true);
       setShowFiftyFifty(false);
       setHiddenOptions([]);
+    } else {
+      console.error('❌ Error fetching current question:', error);
     }
   };
 
