@@ -514,13 +514,27 @@ const Game = () => {
                     </div>
 
                     {hasAnswered && (
-                      <div className="mt-6 p-4 bg-accent rounded-lg">
-                        <p className="font-medium">
-                          Vaš odgovor: {selectedAnswer || 'Ni odgovora'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Čakamo na ostale igralce...
-                        </p>
+                      <div className="mt-6 space-y-4">
+                        <div className="p-4 bg-accent rounded-lg">
+                          <p className="font-medium">
+                            Vaš odgovor: {selectedAnswer || 'Ni odgovora'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Čakamo na ostale igralce...
+                          </p>
+                        </div>
+                        
+                        {/* Show correct answer when everyone has answered */}
+                        {answers.length === participants.length && participants.length > 0 && (
+                          <div className="p-4 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <p className="font-medium text-green-800 dark:text-green-200">
+                              Pravilen odgovor: {currentQuestion.correct_answer}) {currentQuestion[`option_${currentQuestion.correct_answer.toLowerCase()}` as keyof Question] as string}
+                            </p>
+                            <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                              {answers.filter(a => a.is_correct).length} od {participants.length} igralcev je odgovorilo pravilno
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
