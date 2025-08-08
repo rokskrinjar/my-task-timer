@@ -202,10 +202,9 @@ const Game = () => {
     // Only fetch answers if game is active and has a current question
     if (gameData.status === 'active' && gameData.current_question_id) {
       console.log('Game is active, fetching current question and answers');
-      await Promise.all([
-        fetchCurrentQuestion(gameData.current_question_id),
-        fetchAnswers()
-      ]);
+      // First fetch the current question, then fetch answers
+      await fetchCurrentQuestion(gameData.current_question_id);
+      await fetchAnswers();
     }
     
     setLoading(false);
