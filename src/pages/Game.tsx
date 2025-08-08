@@ -1,0 +1,688 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { Users, Clock, Trophy, Phone, HelpCircle, Target } from 'lucide-react';
+
+interface Question {
+  id: string;
+  question_text: string;
+  grade_level: number;
+  subject: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  difficulty_order: number;
+}
+
+interface Game {
+  id: string;
+  game_code: string;
+  status: string;
+  host_id: string;
+  current_question_number: number;
+  current_question_id?: string;
+}
+
+interface Participant {
+  id: string;
+  user_id: string;
+  current_score: number;
+  lifelines_used: number;
+  is_host: boolean;
+  profiles?: {
+    display_name: string;
+  };
+}
+
+interface GameAnswer {
+  user_id: string;
+  user_answer: string;
+  is_correct: boolean;
+  lifeline_used?: string;
+}
+
+const Game = () => {
+  const { gameId } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [game, setGame] = useState<Game | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [answers, setAnswers] = useState<GameAnswer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lifelinesUsed, setLifelinesUsed] = useState<string[]>([]);
+  const [showFiftyFifty, setShowFiftyFifty] = useState(false);
+  const [hiddenOptions, setHiddenOptions] = useState<string[]>([]);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [timerActive, setTimerActive] = useState(false);
+
+  const currentParticipant = participants.find(p => p.user_id === user?.id);
+  const isHost = currentParticipant?.is_host || false;
+
+  useEffect(() => {
+    if (!user || !gameId) return;
+    
+    fetchGameData();
+    
+    // Set up real-time subscriptions
+    const gameChannel = supabase
+      .channel(`game-${gameId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'games',
+        filter: `id=eq.${gameId}`
+      }, handleGameUpdate)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'game_participants',
+        filter: `game_id=eq.${gameId}`
+      }, fetchParticipants)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'game_answers',
+        filter: `game_id=eq.${gameId}`
+      }, fetchAnswers)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(gameChannel);
+    };
+  }, [user, gameId]);
+
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      handleTimeUp();
+    }
+    
+    return () => clearInterval(interval);
+  }, [timerActive, timeLeft]);
+
+  const fetchGameData = async () => {
+    const { data: gameData, error: gameError } = await supabase
+      .from('games')
+      .select('*')
+      .eq('id', gameId)
+      .single();
+
+    if (gameError || !gameData) {
+      toast({
+        title: "Napaka",
+        description: "Igra ni bila najdena",
+        variant: "destructive",
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    setGame(gameData);
+    
+    await Promise.all([
+      fetchParticipants(),
+      fetchQuestions(),
+      fetchAnswers()
+    ]);
+    
+    if (gameData.current_question_id) {
+      await fetchCurrentQuestion(gameData.current_question_id);
+    }
+    
+    setLoading(false);
+  };
+
+  const fetchParticipants = async () => {
+    // First fetch participants
+    const { data: participantsData, error: participantsError } = await supabase
+      .from('game_participants')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('current_score', { ascending: false });
+
+    if (participantsError || !participantsData) return;
+
+    // Then fetch profiles for each participant
+    const participantsWithProfiles = await Promise.all(
+      participantsData.map(async (participant) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('user_id', participant.user_id)
+          .single();
+
+        return {
+          ...participant,
+          profiles: profileData || { display_name: 'Neimenovan igralec' }
+        };
+      })
+    );
+
+    setParticipants(participantsWithProfiles);
+  };
+
+  const fetchQuestions = async () => {
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .order('difficulty_order');
+
+    if (!error && data) {
+      setQuestions(data);
+    }
+  };
+
+  const fetchCurrentQuestion = async (questionId: string) => {
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
+    if (!error && data) {
+      setCurrentQuestion(data);
+      setHasAnswered(false);
+      setSelectedAnswer('');
+      setTimeLeft(30);
+      setTimerActive(true);
+      setShowFiftyFifty(false);
+      setHiddenOptions([]);
+    }
+  };
+
+  const fetchAnswers = async () => {
+    if (!game?.current_question_id) return;
+    
+    const { data, error } = await supabase
+      .from('game_answers')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('question_id', game.current_question_id);
+
+    if (!error && data) {
+      setAnswers(data);
+      
+      // Check if current user has answered
+      const userAnswer = data.find(a => a.user_id === user?.id);
+      if (userAnswer) {
+        setHasAnswered(true);
+        setSelectedAnswer(userAnswer.user_answer || '');
+        setTimerActive(false);
+      }
+    }
+  };
+
+  const handleGameUpdate = (payload: any) => {
+    setGame(payload.new);
+    
+    if (payload.new.current_question_id && payload.new.current_question_id !== currentQuestion?.id) {
+      fetchCurrentQuestion(payload.new.current_question_id);
+    }
+  };
+
+  const startGame = async () => {
+    if (!isHost || !questions.length) return;
+    
+    const firstQuestion = questions[0];
+    
+    const { error } = await supabase
+      .from('games')
+      .update({
+        status: 'active',
+        current_question_id: firstQuestion.id,
+        current_question_number: 1,
+        started_at: new Date().toISOString()
+      })
+      .eq('id', gameId);
+
+    if (error) {
+      toast({
+        title: "Napaka",
+        description: "Napaka pri zagonu igre",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitAnswer = async (answer: string, lifeline?: string) => {
+    if (!currentQuestion || hasAnswered) return;
+    
+    const isCorrect = answer === currentQuestion.correct_answer;
+    
+    const { error } = await supabase
+      .from('game_answers')
+      .insert({
+        game_id: gameId,
+        user_id: user?.id,
+        question_id: currentQuestion.id,
+        user_answer: answer,
+        is_correct: isCorrect,
+        lifeline_used: lifeline
+      });
+
+    if (error) {
+      toast({
+        title: "Napaka",
+        description: "Napaka pri oddaji odgovora",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update participant score
+    if (isCorrect) {
+      const { error: scoreError } = await supabase
+        .from('game_participants')
+        .update({
+          current_score: (currentParticipant?.current_score || 0) + 1
+        })
+        .eq('game_id', gameId)
+        .eq('user_id', user?.id);
+
+      if (scoreError) {
+        console.error('Error updating score:', scoreError);
+      }
+    }
+
+    // Update lifelines used count if lifeline was used
+    if (lifeline) {
+      const { error: lifelineError } = await supabase
+        .from('game_participants')
+        .update({
+          lifelines_used: (currentParticipant?.lifelines_used || 0) + 1
+        })
+        .eq('game_id', gameId)
+        .eq('user_id', user?.id);
+
+      if (lifelineError) {
+        console.error('Error updating lifelines:', lifelineError);
+      }
+    }
+
+    setHasAnswered(true);
+    setSelectedAnswer(answer);
+    setTimerActive(false);
+  };
+
+  const nextQuestion = async () => {
+    if (!isHost || !game) return;
+    
+    const nextQuestionNumber = game.current_question_number + 1;
+    const nextQuestion = questions[nextQuestionNumber - 1];
+    
+    if (!nextQuestion) {
+      // End game
+      const { error } = await supabase
+        .from('games')
+        .update({
+          status: 'finished',
+          finished_at: new Date().toISOString()
+        })
+        .eq('id', gameId);
+
+      if (error) {
+        console.error('Error ending game:', error);
+      }
+      
+      return;
+    }
+    
+    const { error } = await supabase
+      .from('games')
+      .update({
+        current_question_id: nextQuestion.id,
+        current_question_number: nextQuestionNumber
+      })
+      .eq('id', gameId);
+
+    if (error) {
+      toast({
+        title: "Napaka",
+        description: "Napaka pri prehodu na naslednje vprašanje",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const useLifeline = (type: string) => {
+    if (lifelinesUsed.includes(type) || (currentParticipant?.lifelines_used || 0) >= 3) return;
+    
+    setLifelinesUsed([...lifelinesUsed, type]);
+    
+    if (type === '50_50') {
+      if (!currentQuestion) return;
+      
+      const correctAnswer = currentQuestion.correct_answer;
+      const options = ['A', 'B', 'C', 'D'];
+      const wrongOptions = options.filter(opt => opt !== correctAnswer);
+      
+      // Remove 2 wrong options randomly
+      const toHide = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 2);
+      setHiddenOptions(toHide);
+      setShowFiftyFifty(true);
+    }
+  };
+
+  const handleTimeUp = () => {
+    if (!hasAnswered) {
+      submitAnswer('', 'timeout');
+    }
+    setTimerActive(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Nalaganje igre...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Igra ni bila najdena</CardTitle>
+            <CardDescription>Preverite kodo igre ali se obrnite na gostitelja.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/dashboard')}>
+              Nazaj na glavno stran
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold">Koda: {game.game_code}</h1>
+            <Badge variant={game.status === 'active' ? 'default' : 'secondary'}>
+              {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-4">
+            <Users className="h-4 w-4" />
+            <span>{participants.length} igralcev</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Game Area */}
+          <div className="lg:col-span-2 space-y-6">
+            {game.status === 'waiting' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Čakanje na začetek igre</CardTitle>
+                  <CardDescription>
+                    Čakamo, da se vsi igralci pridružijo igri.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isHost && (
+                    <Button onClick={startGame} disabled={participants.length < 2}>
+                      Začni igro
+                    </Button>
+                  )}
+                  {!isHost && (
+                    <p className="text-muted-foreground">
+                      Čakamo, da gostitelj zažene igro...
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {game.status === 'active' && currentQuestion && (
+              <>
+                {/* Question */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <span>Vprašanje {game.current_question_number}</span>
+                          <Badge variant="outline">{currentQuestion.grade_level}. razred</Badge>
+                          <Badge variant="secondary">{currentQuestion.subject}</Badge>
+                        </CardTitle>
+                      </div>
+                      {timerActive && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span className="font-mono text-lg">{timeLeft}s</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-lg mb-6">{currentQuestion.question_text}</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['A', 'B', 'C', 'D'].map((option) => {
+                        const isHidden = hiddenOptions.includes(option);
+                        const optionText = currentQuestion[`option_${option.toLowerCase()}` as keyof Question] as string;
+                        
+                        if (isHidden) {
+                          return (
+                            <div key={option} className="p-4 border rounded-lg bg-muted/50 opacity-50">
+                              <span className="text-muted-foreground">Option hidden</span>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <Button
+                            key={option}
+                            variant={selectedAnswer === option ? "default" : "outline"}
+                            className="p-4 h-auto text-left justify-start"
+                            onClick={() => !hasAnswered && submitAnswer(option)}
+                            disabled={hasAnswered || !timerActive}
+                          >
+                            <span className="font-bold mr-2">{option})</span>
+                            {optionText}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    {hasAnswered && (
+                      <div className="mt-6 p-4 bg-accent rounded-lg">
+                        <p className="font-medium">
+                          Vaš odgovor: {selectedAnswer || 'Ni odgovora'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Čakamo na ostale igralce...
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Lifelines */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5" />
+                      Pomoči ({3 - (currentParticipant?.lifelines_used || 0)} preostalo)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => useLifeline('50_50')}
+                        disabled={lifelinesUsed.includes('50_50') || hasAnswered || (currentParticipant?.lifelines_used || 0) >= 3}
+                      >
+                        <Target className="h-4 w-4 mr-2" />
+                        50:50
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => useLifeline('ask_audience')}
+                        disabled={lifelinesUsed.includes('ask_audience') || hasAnswered || (currentParticipant?.lifelines_used || 0) >= 3}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Vprašaj občinstvo
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => useLifeline('phone_friend')}
+                        disabled={lifelinesUsed.includes('phone_friend') || hasAnswered || (currentParticipant?.lifelines_used || 0) >= 3}
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        Pokliči prijatelja
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Host Controls */}
+                {isHost && answers.length === participants.length && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Gostitelj</CardTitle>
+                      <CardDescription>Vsi igralci so odgovorili</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button onClick={nextQuestion}>
+                        {game.current_question_number >= questions.length ? 'Končaj igro' : 'Naslednje vprašanje'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+
+            {game.status === 'finished' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Igra končana!
+                  </CardTitle>
+                  <CardDescription>Rezultati končne igre</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => navigate('/dashboard')}>
+                    Nazaj na glavno stran
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Leaderboard */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Lestvica
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {participants.map((participant, index) => (
+                    <div
+                      key={participant.id}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        participant.user_id === user?.id ? 'bg-accent' : 'bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-lg">#{index + 1}</span>
+                        <div>
+                          <p className="font-medium">
+                            {participant.profiles?.display_name || 'Neimenovan igralec'}
+                          </p>
+                          {participant.is_host && (
+                            <Badge variant="outline" className="text-xs">Gostitelj</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{participant.current_score}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Pomoči: {3 - participant.lifelines_used}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Current question progress */}
+            {game.status === 'active' && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>Napredek</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Vprašanje</span>
+                      <span>{game.current_question_number} / {questions.length}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(game.current_question_number / questions.length) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Odgovori</span>
+                      <span>{answers.length} / {participants.length}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-secondary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(answers.length / Math.max(participants.length, 1)) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Game;
