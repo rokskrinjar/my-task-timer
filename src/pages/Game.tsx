@@ -239,10 +239,13 @@ const Game = () => {
   };
 
   const startGame = async () => {
+    console.log('startGame called, isHost:', isHost, 'questions.length:', questions.length);
     if (!isHost || !questions.length) return;
     
+    console.log('Starting game with first question:', questions[0]);
     const firstQuestion = questions[0];
     
+    console.log('Updating game status to active...');
     const { error } = await supabase
       .from('games')
       .update({
@@ -252,6 +255,8 @@ const Game = () => {
         started_at: new Date().toISOString()
       })
       .eq('id', gameId);
+
+    console.log('Game update result:', error ? 'ERROR: ' + error.message : 'SUCCESS');
 
     if (error) {
       toast({
@@ -519,9 +524,15 @@ const Game = () => {
                           <p className="font-medium">
                             Vaš odgovor: {selectedAnswer || 'Ni odgovora'}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Čakamo na ostale igralce...
-                          </p>
+                          {participants.length > 1 ? (
+                            <p className="text-sm text-muted-foreground">
+                              Čakamo na ostale igralce...
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Odgovor oddan!
+                            </p>
+                          )}
                         </div>
                         
                         {/* Show correct answer when everyone has answered OR immediately for single player */}
@@ -589,7 +600,7 @@ const Game = () => {
                 </Card>
 
                 {/* Host Controls */}
-                {isHost && answers.length === participants.length && participants.length > 0 && (
+                {isHost && ((answers.length === participants.length && participants.length > 1) || (participants.length === 1 && hasAnswered)) && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Gostitelj</CardTitle>
