@@ -443,12 +443,12 @@ const Game = () => {
                 <CardHeader>
                   <CardTitle>Čakanje na začetek igre</CardTitle>
                   <CardDescription>
-                    Čakamo, da se vsi igralci pridružijo igri.
+                    {participants.length === 1 ? 'Igrate sami. Pripravljeni za izziv?' : 'Čakamo, da se vsi igralci pridružijo igri.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isHost && (
-                    <Button onClick={startGame} disabled={participants.length < 2}>
+                    <Button onClick={startGame} disabled={participants.length < 1}>
                       Začni igro
                     </Button>
                   )}
@@ -568,7 +568,7 @@ const Game = () => {
                 </Card>
 
                 {/* Host Controls */}
-                {isHost && answers.length === participants.length && (
+                {isHost && answers.length === participants.length && participants.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Gostitelj</CardTitle>
