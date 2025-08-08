@@ -274,11 +274,16 @@ const Game = () => {
 
   const fetchAnswers = async () => {
     if (!game?.current_question_id) {
-      console.log('No current question ID, skipping answers fetch');
+      console.log('❌ No current question ID, skipping answers fetch. Game:', game);
       return;
     }
     
-    console.log('Fetching answers for question:', game.current_question_id);
+    console.log('📝 Fetching answers for:', { 
+      gameId, 
+      questionId: game.current_question_id,
+      gameStatus: game.status 
+    });
+    
     const { data, error } = await supabase
       .from('game_answers')
       .select('*')
@@ -286,11 +291,17 @@ const Game = () => {
       .eq('question_id', game.current_question_id);
 
     if (error) {
-      console.error('Error fetching answers:', error);
+      console.error('❌ Error fetching answers:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return;
     }
 
-    console.log('Fetched answers:', data);
+    console.log('✅ Fetched answers:', data);
     if (data) {
       setAnswers(data);
       
@@ -300,6 +311,7 @@ const Game = () => {
         data.find(a => a.user_id === null); // Guest players have null user_id
       
       if (userAnswer) {
+        console.log('👤 Found user answer:', userAnswer);
         setHasAnswered(true);
         setSelectedAnswer(userAnswer.user_answer || '');
         setTimerActive(false);
