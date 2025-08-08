@@ -121,13 +121,14 @@ const Game = () => {
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
         console.log('📝 Real-time answers update received:', payload);
-        if (game?.current_question_id) {
-          console.log('🔄 Calling fetchAnswers from real-time update...');
+        // Use current question from state instead of game state to avoid race conditions
+        if (currentQuestion?.id) {
+          console.log('🔄 Calling fetchAnswers from real-time update with currentQuestion:', currentQuestion.id);
           fetchAnswers().catch(error => {
             console.error('❌ fetchAnswers failed from real-time update:', error);
           });
         } else {
-          console.log('⚠️ No current question ID, skipping fetchAnswers from real-time update');
+          console.log('⚠️ No current question in state, skipping fetchAnswers from real-time update');
         }
       })
       .subscribe((status) => {
@@ -148,7 +149,7 @@ const Game = () => {
     return () => {
       supabase.removeChannel(gameChannel);
     };
-  }, [user, isGuest, gameId]);
+  }, [user, isGuest, gameId, currentQuestion]);
 
   // Timer effect
   useEffect(() => {
@@ -278,15 +279,16 @@ const Game = () => {
   };
 
   const fetchAnswers = async () => {
-    if (!game?.current_question_id) {
-      console.log('❌ No current question ID, skipping answers fetch. Game:', game);
+    const questionId = currentQuestion?.id || game?.current_question_id;
+    if (!questionId) {
+      console.log('❌ No current question ID, skipping answers fetch. Game:', game, 'CurrentQuestion:', currentQuestion);
       return;
     }
     
     console.log('📝 Fetching answers for:', { 
       gameId, 
-      questionId: game.current_question_id,
-      gameStatus: game.status,
+      questionId: questionId,
+      gameStatus: game?.status,
       user: user?.id,
       isGuest: isGuest,
       authUid: 'will be null for guests'
@@ -297,7 +299,7 @@ const Game = () => {
       .from('game_answers')
       .select('*')
       .eq('game_id', gameId)
-      .eq('question_id', game.current_question_id);
+      .eq('question_id', questionId);
 
     if (error) {
       console.error('❌ Error fetching answers:', error);
