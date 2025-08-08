@@ -121,14 +121,21 @@ const Game = () => {
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
         console.log('📝 Real-time answers update received:', payload);
-        // Use current question from state instead of game state to avoid race conditions
-        if (currentQuestion?.id) {
-          console.log('🔄 Calling fetchAnswers from real-time update with currentQuestion:', currentQuestion.id);
+        console.log('🔍 Current state check:', {
+          currentQuestionId: currentQuestion?.id,
+          gameCurrentQuestionId: game?.current_question_id,
+          hasCurrentQuestion: !!currentQuestion?.id
+        });
+        
+        // Always try to fetch answers if we have any current question reference
+        const questionId = currentQuestion?.id || game?.current_question_id;
+        if (questionId) {
+          console.log('🔄 Calling fetchAnswers from real-time update with questionId:', questionId);
           fetchAnswers().catch(error => {
             console.error('❌ fetchAnswers failed from real-time update:', error);
           });
         } else {
-          console.log('⚠️ No current question in state, skipping fetchAnswers from real-time update');
+          console.log('⚠️ No current question available, skipping fetchAnswers from real-time update');
         }
       })
       .subscribe((status) => {
@@ -313,6 +320,7 @@ const Game = () => {
     }
 
     console.log('✅ Fetched answers:', data);
+    console.log('🔄 Setting answers state. Previous:', answers, 'New:', data);
     if (data) {
       setAnswers(data);
       
