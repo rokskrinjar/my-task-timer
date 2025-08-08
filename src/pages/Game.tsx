@@ -705,10 +705,50 @@ const Game = () => {
     }
   };
 
-  const useLifeline = (type: string) => {
+  const useLifeline = async (type: string) => {
     if (lifelinesUsed.includes(type) || (currentParticipant?.lifelines_used || 0) >= 3) return;
     
     setLifelinesUsed([...lifelinesUsed, type]);
+    
+    // Record lifeline usage in database
+    const lifeline_used_value = type; // This should match the constraint values
+    
+    console.log('🎯 Using lifeline:', { 
+      type: lifeline_used_value, 
+      user: user?.id, 
+      isGuest, 
+      guestPlayer: guestPlayer?.displayName,
+      currentQuestion: currentQuestion?.id 
+    });
+
+    if (currentQuestion) {
+      const lifeline_data = {
+        game_id: gameId,
+        user_id: user?.id || null,
+        question_id: currentQuestion.id,
+        user_answer: '', // Empty answer for lifeline usage
+        is_correct: false, // Not applicable for lifeline
+        lifeline_used: lifeline_used_value
+      };
+      
+      console.log('📝 Submitting lifeline data:', lifeline_data);
+      
+      const { error } = await supabase
+        .from('game_answers')
+        .insert(lifeline_data);
+
+      if (error) {
+        console.error('❌ Lifeline submission error:', error);
+        toast({
+          title: "Napaka",
+          description: "Napaka pri uporabi pomoči",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('✅ Lifeline submitted successfully');
+    }
     
     if (type === '50_50') {
       if (!currentQuestion) return;
