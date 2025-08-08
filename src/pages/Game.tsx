@@ -94,14 +94,14 @@ const Game = () => {
     // Set up real-time subscriptions
     console.log('Setting up real-time subscriptions for gameId:', gameId);
     const gameChannel = supabase
-      .channel(`game-${gameId}-${Math.random()}`) // Unique channel name
+      .channel(`game-updates-${gameId}`) // Simpler channel name
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'games',
         filter: `id=eq.${gameId}`
       }, (payload) => {
-        console.log('🔥 Real-time game update:', payload);
+        console.log('🔥 Real-time game update received:', payload);
         handleGameUpdate(payload);
       })
       .on('postgres_changes', {
@@ -110,12 +110,9 @@ const Game = () => {
         table: 'game_participants',
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
-        console.log('👥 Real-time participants update:', payload);
-        // Force refetch participants to ensure we get latest data
-        setTimeout(() => {
-          console.log('Fetching participants after real-time update...');
-          fetchParticipants();
-        }, 100);
+        console.log('👥 Real-time participants update received:', payload);
+        console.log('Triggering participants refetch...');
+        fetchParticipants();
       })
       .on('postgres_changes', {
         event: '*',
@@ -123,15 +120,21 @@ const Game = () => {
         table: 'game_answers',
         filter: `game_id=eq.${gameId}`
       }, (payload) => {
-        console.log('📝 Real-time answers update:', payload);
-        setTimeout(() => {
+        console.log('📝 Real-time answers update received:', payload);
+        if (game?.current_question_id) {
           fetchAnswers();
-        }, 100);
+        }
       })
       .subscribe((status) => {
         console.log('📡 Real-time subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to real-time updates');
+          // Force initial data fetch after subscription
+          console.log('🔄 Forcing initial data refresh after subscription...');
+          setTimeout(() => {
+            fetchParticipants();
+            fetchGameData();
+          }, 500);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Real-time subscription error');
         }
@@ -157,6 +160,7 @@ const Game = () => {
   }, [timerActive, timeLeft]);
 
   const fetchGameData = async () => {
+    console.log('🔄 Fetching game data for gameId:', gameId);
     const { data: gameData, error: gameError } = await supabase
       .from('games')
       .select('*')
@@ -164,6 +168,7 @@ const Game = () => {
       .single();
 
     if (gameError || !gameData) {
+      console.error('Error fetching game:', gameError);
       toast({
         title: "Napaka",
         description: "Igra ni bila najdena",
@@ -173,6 +178,7 @@ const Game = () => {
       return;
     }
 
+    console.log('📋 Fetched game data:', gameData);
     setGame(gameData);
     
     await Promise.all([
@@ -182,11 +188,11 @@ const Game = () => {
     
     // Only fetch answers if game is active and has a current question
     if (gameData.status === 'active' && gameData.current_question_id) {
-      await fetchAnswers();
-    }
-    
-    if (gameData.current_question_id) {
-      await fetchCurrentQuestion(gameData.current_question_id);
+      console.log('Game is active, fetching current question and answers');
+      await Promise.all([
+        fetchCurrentQuestion(gameData.current_question_id),
+        fetchAnswers()
+      ]);
     }
     
     setLoading(false);
@@ -362,6 +368,12 @@ const Game = () => {
         current_question_id: firstQuestion.id,
         current_question_number: 1
       } : null);
+      
+      // Force a broadcast by refetching game data for all clients
+      console.log('🔄 Broadcasting game state change...');
+      setTimeout(() => {
+        fetchGameData();
+      }, 200);
     }
   };
 
