@@ -35,19 +35,33 @@ const Dashboard = () => {
   const fetchMyGames = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    // First get games where user is host
+    const { data: hostGames, error: hostError } = await supabase
+      .from('games')
+      .select('*')
+      .eq('host_id', user.id)
+      .order('created_at', { ascending: false });
+
+    // Then get games where user is participant
+    const { data: participantGames, error: participantError } = await supabase
       .from('games')
       .select(`
         *,
-        game_participants!inner(count)
+        game_participants!inner(*)
       `)
-      .or(`host_id.eq.${user.id},game_participants.user_id.eq.${user.id}`)
+      .eq('game_participants.user_id', user.id)
+      .neq('host_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching games:', error);
+    if (hostError || participantError) {
+      console.error('Error fetching games:', hostError || participantError);
     } else {
-      setMyGames(data || []);
+      // Combine and deduplicate games
+      const allGames = [...(hostGames || []), ...(participantGames || [])];
+      const uniqueGames = allGames.filter((game, index, self) => 
+        index === self.findIndex(g => g.id === game.id)
+      );
+      setMyGames(uniqueGames);
     }
   };
 

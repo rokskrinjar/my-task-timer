@@ -28,7 +28,10 @@ const JoinGame = () => {
   const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Join game clicked:', { gameCode: gameCode.trim(), displayName: displayName.trim() });
+    
     if (!gameCode.trim() || !displayName.trim()) {
+      console.log('Missing data - gameCode or displayName empty');
       toast({
         title: "Manjkajo podatki",
         description: "Vnesite kodo igre in vaše ime",
@@ -40,6 +43,7 @@ const JoinGame = () => {
     setLoading(true);
     
     try {
+      console.log('Searching for game with code:', gameCode.toUpperCase());
       // Find game by code
       const { data: gameData, error: gameError } = await supabase
         .from('games')
@@ -47,6 +51,8 @@ const JoinGame = () => {
         .eq('game_code', gameCode.toUpperCase())
         .eq('status', 'waiting')
         .single();
+
+      console.log('Game search result:', { gameData, gameError });
 
       if (gameError || !gameData) {
         toast({
@@ -59,12 +65,15 @@ const JoinGame = () => {
       }
 
       // Check if display name is already taken in this game
+      console.log('Checking if display name exists:', displayName.trim());
       const { data: existingParticipant } = await supabase
         .from('game_participants')
         .select('*')
         .eq('game_id', gameData.id)
         .eq('display_name', displayName.trim())
         .single();
+
+      console.log('Existing participant check:', existingParticipant);
 
       if (existingParticipant) {
         toast({
@@ -77,6 +86,7 @@ const JoinGame = () => {
       }
 
       // Join game as guest
+      console.log('Attempting to join game as guest...');
       const { error: joinError } = await supabase
         .from('game_participants')
         .insert({
@@ -85,6 +95,8 @@ const JoinGame = () => {
           display_name: displayName.trim(),
           is_host: false
         });
+
+      console.log('Join game result:', { joinError });
 
       if (joinError) {
         toast({
