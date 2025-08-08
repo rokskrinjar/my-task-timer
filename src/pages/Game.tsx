@@ -267,7 +267,8 @@ const Game = () => {
       
       if (!error && data) {
         console.log('✅ Fetched fallback questions. Count:', data.length);
-        setQuestions(data);
+        const randomizedQuestions = randomizeQuestionsByDifficulty(data);
+        setQuestions(randomizedQuestions);
       }
       return;
     }
@@ -276,15 +277,97 @@ const Game = () => {
     const { data, error } = await supabase
       .from('questions')
       .select('*')
-      .eq('category', gameData.category)
-      .order('difficulty_order');
+      .eq('category', gameData.category);
 
     if (!error && data) {
       console.log('✅ Fetched questions for category:', gameData.category, 'Count:', data.length);
-      setQuestions(data);
+      const randomizedQuestions = randomizeQuestionsByDifficulty(data);
+      setQuestions(randomizedQuestions);
     } else {
       console.error('❌ Error fetching questions:', error);
     }
+  };
+
+  // Function to randomize questions while maintaining difficulty progression
+  const randomizeQuestionsByDifficulty = (allQuestions: Question[]) => {
+    // Group questions by grade level (difficulty)
+    const questionsByGrade: { [key: number]: Question[] } = {};
+    
+    allQuestions.forEach(question => {
+      if (!questionsByGrade[question.grade_level]) {
+        questionsByGrade[question.grade_level] = [];
+      }
+      questionsByGrade[question.grade_level].push(question);
+    });
+
+    // Shuffle questions within each grade level
+    Object.keys(questionsByGrade).forEach(grade => {
+      questionsByGrade[parseInt(grade)] = shuffleArray(questionsByGrade[parseInt(grade)]);
+    });
+
+    // Create progressive difficulty: start with easier questions, gradually increase difficulty
+    const finalQuestions: Question[] = [];
+    const totalQuestions = 15; // Standard quiz length
+    const grades = Object.keys(questionsByGrade).map(Number).sort();
+    
+    // Progressive difficulty distribution (easier questions first, harder later)
+    const difficultyProgression = [
+      { grades: [1], count: 4 },    // Questions 1-4: Grade 1 (easiest)
+      { grades: [1, 2], count: 3 }, // Questions 5-7: Mix of grade 1-2
+      { grades: [2], count: 3 },    // Questions 8-10: Grade 2
+      { grades: [2, 3], count: 2 }, // Questions 11-12: Mix of grade 2-3
+      { grades: [3, 4], count: 2 }, // Questions 13-14: Mix of grade 3-4
+      { grades: [4, 5], count: 1 }  // Question 15: Hardest (grade 4-5)
+    ];
+
+    for (const stage of difficultyProgression) {
+      const availableGrades = stage.grades.filter(g => questionsByGrade[g] && questionsByGrade[g].length > 0);
+      
+      for (let i = 0; i < stage.count && finalQuestions.length < totalQuestions; i++) {
+        if (availableGrades.length === 0) break;
+        
+        const randomGrade = availableGrades[Math.floor(Math.random() * availableGrades.length)];
+        const question = questionsByGrade[randomGrade].shift();
+        
+        if (question) {
+          finalQuestions.push(question);
+        }
+        
+        // Remove grade from available if no more questions
+        if (questionsByGrade[randomGrade].length === 0) {
+          const index = availableGrades.indexOf(randomGrade);
+          if (index > -1) availableGrades.splice(index, 1);
+        }
+      }
+    }
+
+    // If we still need more questions, add remaining randomly
+    const remainingQuestions = Object.values(questionsByGrade).flat();
+    while (finalQuestions.length < totalQuestions && remainingQuestions.length > 0) {
+      const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+      const question = remainingQuestions.splice(randomIndex, 1)[0];
+      finalQuestions.push(question);
+    }
+
+    console.log('📊 Randomized questions with progressive difficulty:', {
+      total: finalQuestions.length,
+      gradeDistribution: finalQuestions.reduce((acc, q) => {
+        acc[q.grade_level] = (acc[q.grade_level] || 0) + 1;
+        return acc;
+      }, {} as { [key: number]: number })
+    });
+
+    return finalQuestions;
+  };
+
+  // Fisher-Yates shuffle algorithm
+  const shuffleArray = (array: any[]): any[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   };
 
   const fetchCurrentQuestion = async (questionId: string) => {
