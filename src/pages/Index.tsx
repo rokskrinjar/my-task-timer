@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { Users, Trophy } from 'lucide-react';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -48,12 +49,31 @@ const Index = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Kviz v stilu "Lepo je biti milijonar" za osnovno šolo. Tekmujte s prijatelji in pokažite svoje znanje!
           </p>
-          <div className="flex gap-4 justify-center mt-8">
-            <Button size="lg" asChild>
-              <Link to="/join">Pridruži se igri</Link>
+          
+          {/* Main action - Join game as guest */}
+          <div className="bg-card border rounded-lg p-6 max-w-md mx-auto">
+            <h2 className="text-2xl font-bold mb-2">Pridruži se igri</h2>
+            <p className="text-muted-foreground mb-4">
+              Brez prijave - samo vnesite kodo igre in vaše ime!
+            </p>
+            <Button size="lg" className="w-full" asChild>
+              <Link to="/join">
+                <Users className="mr-2 h-5 w-5" />
+                Pridruži se igri
+              </Link>
             </Button>
+          </div>
+          
+          {/* Secondary action - Create games */}
+          <div className="pt-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Želite ustvariti svojo igro?
+            </p>
             <Button variant="outline" size="lg" asChild>
-              <Link to="/auth">Ustvari igro</Link>
+              <Link to="/auth">
+                <Trophy className="mr-2 h-4 w-4" />
+                Prijavite se in ustvarite igro
+              </Link>
             </Button>
           </div>
         </div>
