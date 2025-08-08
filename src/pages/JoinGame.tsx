@@ -8,13 +8,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast';
 import { Users, Loader2 } from 'lucide-react';
 
+console.log('JoinGame component loaded!');
+
 const JoinGame = () => {
+  console.log('JoinGame component rendering...');
+  
   const [gameCode, setGameCode] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  
+  console.log('JoinGame state:', { gameCode, displayName, loading });
   
   // Pre-fill game code from URL if provided
   const urlGameCode = searchParams.get('code');
@@ -174,7 +180,9 @@ const JoinGame = () => {
               className="w-full" 
               disabled={loading}
               onClick={(e) => {
-                console.log('Button clicked!');
+                console.log('=== BUTTON CLICKED ===');
+                console.log('Event:', e);
+                console.log('Form data:', { gameCode, displayName });
                 handleJoinGame(e);
               }}
             >
