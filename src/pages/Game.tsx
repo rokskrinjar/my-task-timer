@@ -122,7 +122,12 @@ const Game = () => {
       }, (payload) => {
         console.log('📝 Real-time answers update received:', payload);
         if (game?.current_question_id) {
-          fetchAnswers();
+          console.log('🔄 Calling fetchAnswers from real-time update...');
+          fetchAnswers().catch(error => {
+            console.error('❌ fetchAnswers failed from real-time update:', error);
+          });
+        } else {
+          console.log('⚠️ No current question ID, skipping fetchAnswers from real-time update');
         }
       })
       .subscribe((status) => {
