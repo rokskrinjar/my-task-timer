@@ -557,15 +557,18 @@ const Game = () => {
     
     console.log('📝 Submitting answer data:', answerData);
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('game_answers')
       .insert(answerData);
 
+    console.log('🔍 Answer submission result:', { data, error });
+
     if (error) {
       console.error('❌ Answer submission error:', error);
+      console.error('❌ Full error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Napaka",
-        description: "Napaka pri oddaji odgovora",
+        description: `Napaka pri oddaji odgovora: ${error.message}`,
         variant: "destructive",
       });
       return;
@@ -743,15 +746,18 @@ const Game = () => {
       
       console.log('📝 Submitting lifeline data:', lifeline_data);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('game_answers')
         .insert(lifeline_data);
 
+      console.log('🔍 Lifeline submission result:', { data, error });
+
       if (error) {
         console.error('❌ Lifeline submission error:', error);
+        console.error('❌ Full error details:', JSON.stringify(error, null, 2));
         toast({
           title: "Napaka",
-          description: "Napaka pri uporabi pomoči",
+          description: `Napaka pri uporabi pomoči: ${error.message}`,
           variant: "destructive",
         });
         return;
