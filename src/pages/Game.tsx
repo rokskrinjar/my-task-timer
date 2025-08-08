@@ -453,6 +453,15 @@ const Game = () => {
     console.log('✅ Answer submitted successfully');
 
     // Update participant score (only for correct answers)
+    console.log('🏆 Score update check:', { 
+      isCorrect, 
+      currentParticipant: currentParticipant?.id, 
+      currentScore: currentParticipant?.current_score,
+      user: user?.id,
+      isGuest,
+      guestDisplayName: guestPlayer?.displayName
+    });
+    
     if (isCorrect && currentParticipant) {
       const updateData = {
         current_score: (currentParticipant.current_score || 0) + 1
@@ -462,14 +471,25 @@ const Game = () => {
         { game_id: gameId, user_id: user.id } :
         { game_id: gameId, display_name: guestPlayer?.displayName };
 
+      console.log('🏆 Updating score with:', { updateData, updateCondition });
+
       const { error: scoreError } = await supabase
         .from('game_participants')
         .update(updateData)
         .match(updateCondition);
 
       if (scoreError) {
-        console.error('Error updating score:', scoreError);
+        console.error('❌ Error updating score:', scoreError);
+      } else {
+        console.log('✅ Score updated successfully');
+        // Refresh participants to show updated scores
+        fetchParticipants();
       }
+    } else {
+      console.log('❌ Score not updated because:', {
+        isCorrect,
+        hasCurrentParticipant: !!currentParticipant
+      });
     }
 
     // Update lifelines used count if lifeline was used
