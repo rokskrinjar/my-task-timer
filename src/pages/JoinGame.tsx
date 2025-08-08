@@ -169,7 +169,15 @@ const JoinGame = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading}
+              onClick={(e) => {
+                console.log('Button clicked!');
+                handleJoinGame(e);
+              }}
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Pridruži se igri
             </Button>
