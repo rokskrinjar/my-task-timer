@@ -20,6 +20,7 @@ interface Game {
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [gameCode, setGameCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
   const [myGames, setMyGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -90,12 +91,19 @@ const Dashboard = () => {
         variant: "destructive",
       });
     } else {
-      // Add host as participant
+      // Add host as participant with their profile name
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single();
+
       await supabase
         .from('game_participants')
         .insert({
           game_id: gameData.id,
           user_id: user.id,
+          display_name: profileData?.display_name || 'Gostitelj',
           is_host: true
         });
 
@@ -111,7 +119,7 @@ const Dashboard = () => {
   };
 
   const joinGame = async () => {
-    if (!user || !gameCode.trim()) return;
+    if (!user || !gameCode.trim() || !playerName.trim()) return;
     
     setLoading(true);
     
@@ -133,18 +141,30 @@ const Dashboard = () => {
       return;
     }
 
-    // Check if already in game
-    const { data: participantData } = await supabase
+    // Check if player name is already taken in this game
+    const { data: existingParticipant } = await supabase
       .from('game_participants')
       .select('*')
       .eq('game_id', gameData.id)
-      .eq('user_id', user.id)
+      .or(`display_name.eq.${playerName.trim()},user_id.eq.${user.id}`)
       .single();
 
-    if (participantData) {
-      navigate(`/game/${gameData.id}`);
-      setLoading(false);
-      return;
+    if (existingParticipant) {
+      if (existingParticipant.user_id === user.id) {
+        // User already in game
+        navigate(`/game/${gameData.id}`);
+        setLoading(false);
+        return;
+      } else {
+        // Display name taken
+        toast({
+          title: "Ime zasedeno",
+          description: "To ime je že v uporabi v tej igri. Izberite drugo ime.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     // Join game
@@ -153,6 +173,7 @@ const Dashboard = () => {
       .insert({
         game_id: gameData.id,
         user_id: user.id,
+        display_name: playerName.trim(),
         is_host: false
       });
 
@@ -233,7 +254,7 @@ const Dashboard = () => {
                 Pridruži se igri
               </CardTitle>
               <CardDescription>
-                Vnesite kodo igre za pridružitev
+                Vnesite kodo igre in vaše ime za pridružitev
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -243,9 +264,15 @@ const Dashboard = () => {
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 maxLength={6}
               />
+              <Input
+                placeholder="Vaše ime v igri"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                maxLength={50}
+              />
               <Button 
                 onClick={joinGame} 
-                disabled={loading || !gameCode.trim()}
+                disabled={loading || !gameCode.trim() || !playerName.trim()}
                 className="w-full"
               >
                 Pridruži se
