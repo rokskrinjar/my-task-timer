@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Users, Clock, Trophy, Phone, HelpCircle, Target } from 'lucide-react';
 
 interface Question {
@@ -75,6 +77,7 @@ const Game = () => {
   const [hiddenOptions, setHiddenOptions] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerActive, setTimerActive] = useState(false);
+  const [audiencePollResults, setAudiencePollResults] = useState<{option: string, percentage: number}[] | null>(null);
 
   const currentParticipant = participants.find(p => 
     user ? p.user_id === user.id : p.display_name === guestPlayer?.displayName
@@ -742,10 +745,18 @@ const Game = () => {
         }
       });
       
+      // Create chart data
+      const chartData = ['A', 'B', 'C', 'D'].map(option => ({
+        option,
+        percentage: results[option] || 0
+      }));
+      
+      setAudiencePollResults(chartData);
+      
       toast({
         title: "Vprašaj občinstvo",
-        description: `Rezultati: A: ${results.A || 0}%, B: ${results.B || 0}%, C: ${results.C || 0}%, D: ${results.D || 0}%`,
-        duration: 8000,
+        description: "Rezultati občinstva so prikazani v grafu spodaj",
+        duration: 5000,
       });
     } else if (type === 'phone_friend') {
       if (!currentQuestion) return;
@@ -1020,6 +1031,60 @@ const Game = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Audience Poll Results Chart */}
+                {audiencePollResults && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Rezultati občinstva
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          percentage: {
+                            label: "Glasovi (%)",
+                            color: "hsl(var(--chart-1))",
+                          },
+                        }}
+                        className="h-[200px]"
+                      >
+                        <BarChart data={audiencePollResults}>
+                          <XAxis 
+                            dataKey="option" 
+                            tick={{ fontSize: 12 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <ChartTooltip 
+                            content={<ChartTooltipContent />}
+                            cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                          />
+                          <Bar 
+                            dataKey="percentage" 
+                            fill="var(--color-percentage)"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ChartContainer>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4 w-full"
+                        onClick={() => setAudiencePollResults(null)}
+                      >
+                        Skrij rezultate
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Host Controls */}
                 {isHost && ((answers.length === participants.length && participants.length > 1) || (participants.length === 1 && hasAnswered)) && (
