@@ -257,13 +257,25 @@ const Game = () => {
       .eq('id', gameId);
 
     console.log('Game update result:', error ? 'ERROR: ' + error.message : 'SUCCESS');
-
+    
     if (error) {
       toast({
         title: "Napaka",
         description: "Napaka pri zagonu igre",
         variant: "destructive",
       });
+    } else {
+      // Immediately show the first question instead of waiting for realtime update
+      console.log('Immediately showing first question');
+      await fetchCurrentQuestion(firstQuestion.id);
+      
+      // Update local game state immediately
+      setGame(prev => prev ? {
+        ...prev,
+        status: 'active',
+        current_question_id: firstQuestion.id,
+        current_question_number: 1
+      } : null);
     }
   };
 
