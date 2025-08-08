@@ -708,6 +708,16 @@ const Game = () => {
   const useLifeline = async (type: string) => {
     if (lifelinesUsed.includes(type) || (currentParticipant?.lifelines_used || 0) >= 3) return;
     
+    console.log('🆘 Lifeline button clicked:', { 
+      type, 
+      user: user?.id, 
+      isGuest, 
+      guestPlayer,
+      currentParticipant: currentParticipant?.display_name,
+      lifelinesUsed,
+      maxLifelinesReached: (currentParticipant?.lifelines_used || 0) >= 3
+    });
+    
     setLifelinesUsed([...lifelinesUsed, type]);
     
     // Record lifeline usage in database
