@@ -305,38 +305,51 @@ const Game = () => {
       questionsByGrade[parseInt(grade)] = shuffleArray(questionsByGrade[parseInt(grade)]);
     });
 
-    // Create progressive difficulty: start with easier questions, gradually increase difficulty
+    // Create progressive difficulty: linear progression from grade 1 to higher grades
     const finalQuestions: Question[] = [];
-    const totalQuestions = 15; // Standard quiz length
+    const totalQuestions = 10; // Reduced to 10 questions
     const grades = Object.keys(questionsByGrade).map(Number).sort();
     
-    // Progressive difficulty distribution (easier questions first, harder later)
+    // Linear difficulty progression: 1-2 grade 1, 3 grade 2, 4 grade 3, 5 grade 4, etc.
     const difficultyProgression = [
-      { grades: [1], count: 4 },    // Questions 1-4: Grade 1 (easiest)
-      { grades: [1, 2], count: 3 }, // Questions 5-7: Mix of grade 1-2
-      { grades: [2], count: 3 },    // Questions 8-10: Grade 2
-      { grades: [2, 3], count: 2 }, // Questions 11-12: Mix of grade 2-3
-      { grades: [3, 4], count: 2 }, // Questions 13-14: Mix of grade 3-4
-      { grades: [4, 5], count: 1 }  // Question 15: Hardest (grade 4-5)
+      { grade: 1, count: 2 },  // Questions 1-2: Grade 1
+      { grade: 2, count: 1 },  // Question 3: Grade 2
+      { grade: 3, count: 1 },  // Question 4: Grade 3
+      { grade: 4, count: 1 },  // Question 5: Grade 4
+      { grade: 5, count: 1 },  // Question 6: Grade 5 (if available)
+      { grade: 4, count: 1 },  // Question 7: Grade 4 (fallback)
+      { grade: 3, count: 1 },  // Question 8: Grade 3 (fallback)
+      { grade: 4, count: 1 },  // Question 9: Grade 4 (fallback)
+      { grade: 5, count: 1 }   // Question 10: Grade 5 (hardest)
     ];
 
     for (const stage of difficultyProgression) {
-      const availableGrades = stage.grades.filter(g => questionsByGrade[g] && questionsByGrade[g].length > 0);
+      if (finalQuestions.length >= totalQuestions) break;
       
-      for (let i = 0; i < stage.count && finalQuestions.length < totalQuestions; i++) {
-        if (availableGrades.length === 0) break;
-        
-        const randomGrade = availableGrades[Math.floor(Math.random() * availableGrades.length)];
-        const question = questionsByGrade[randomGrade].shift();
-        
+      // Try to get question from the specified grade, fallback to available grades
+      let questionAdded = false;
+      
+      // First try the exact grade
+      if (questionsByGrade[stage.grade] && questionsByGrade[stage.grade].length > 0) {
+        const question = questionsByGrade[stage.grade].shift();
         if (question) {
           finalQuestions.push(question);
+          questionAdded = true;
         }
-        
-        // Remove grade from available if no more questions
-        if (questionsByGrade[randomGrade].length === 0) {
-          const index = availableGrades.indexOf(randomGrade);
-          if (index > -1) availableGrades.splice(index, 1);
+      }
+      
+      // If no question from exact grade, try nearby grades
+      if (!questionAdded) {
+        const availableGrades = grades.filter(g => questionsByGrade[g] && questionsByGrade[g].length > 0);
+        if (availableGrades.length > 0) {
+          // Prefer grades close to the target grade
+          const closestGrade = availableGrades.reduce((prev, curr) => 
+            Math.abs(curr - stage.grade) < Math.abs(prev - stage.grade) ? curr : prev
+          );
+          const question = questionsByGrade[closestGrade].shift();
+          if (question) {
+            finalQuestions.push(question);
+          }
         }
       }
     }
@@ -349,12 +362,12 @@ const Game = () => {
       finalQuestions.push(question);
     }
 
-    console.log('📊 Randomized questions with progressive difficulty:', {
+    console.log('📊 Randomized questions with linear difficulty progression:', {
       total: finalQuestions.length,
-      gradeDistribution: finalQuestions.reduce((acc, q) => {
-        acc[q.grade_level] = (acc[q.grade_level] || 0) + 1;
+      gradeDistribution: finalQuestions.reduce((acc, q, index) => {
+        acc[`Q${index + 1} (Grade ${q.grade_level})`] = q.question_text.substring(0, 30) + '...';
         return acc;
-      }, {} as { [key: number]: number })
+      }, {} as { [key: string]: string })
     });
 
     return finalQuestions;
@@ -705,6 +718,51 @@ const Game = () => {
       const toHide = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 2);
       setHiddenOptions(toHide);
       setShowFiftyFifty(true);
+    } else if (type === 'ask_audience') {
+      if (!currentQuestion) return;
+      
+      // Simulate audience poll - correct answer gets 60-80%, others split the rest
+      const correctAnswer = currentQuestion.correct_answer;
+      const correctPercentage = 60 + Math.random() * 20; // 60-80%
+      const remainingPercentage = 100 - correctPercentage;
+      const wrongOptions = ['A', 'B', 'C', 'D'].filter(opt => opt !== correctAnswer);
+      
+      const results: { [key: string]: number } = {};
+      results[correctAnswer] = Math.round(correctPercentage);
+      
+      // Distribute remaining percentage among wrong options
+      let remaining = remainingPercentage;
+      wrongOptions.forEach((opt, index) => {
+        if (index === wrongOptions.length - 1) {
+          results[opt] = Math.round(remaining);
+        } else {
+          const percentage = Math.random() * remaining;
+          results[opt] = Math.round(percentage);
+          remaining -= percentage;
+        }
+      });
+      
+      toast({
+        title: "Vprašaj občinstvo",
+        description: `Rezultati: A: ${results.A || 0}%, B: ${results.B || 0}%, C: ${results.C || 0}%, D: ${results.D || 0}%`,
+        duration: 8000,
+      });
+    } else if (type === 'phone_friend') {
+      if (!currentQuestion) return;
+      
+      // Simulate friend's advice - 70% chance they suggest the correct answer
+      const correctAnswer = currentQuestion.correct_answer;
+      const isCorrectAdvice = Math.random() < 0.7;
+      const advice = isCorrectAdvice ? correctAnswer : ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
+      
+      const friendNames = ['Ana', 'Marko', 'Petra', 'Janez', 'Nina', 'Luka'];
+      const friendName = friendNames[Math.floor(Math.random() * friendNames.length)];
+      
+      toast({
+        title: "Pokliči prijatelja",
+        description: `${friendName} pravi: "Mislim, da je pravilen odgovor ${advice}."`,
+        duration: 8000,
+      });
     }
   };
 
