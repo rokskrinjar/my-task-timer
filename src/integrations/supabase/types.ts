@@ -77,6 +77,7 @@ export type Database = {
       game_answers: {
         Row: {
           answered_at: string
+          display_name: string | null
           game_id: string
           id: string
           is_correct: boolean | null
@@ -87,6 +88,7 @@ export type Database = {
         }
         Insert: {
           answered_at?: string
+          display_name?: string | null
           game_id: string
           id?: string
           is_correct?: boolean | null
@@ -97,6 +99,7 @@ export type Database = {
         }
         Update: {
           answered_at?: string
+          display_name?: string | null
           game_id?: string
           id?: string
           is_correct?: boolean | null

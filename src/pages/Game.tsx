@@ -457,7 +457,7 @@ const Game = () => {
       // Check if current user has answered (exclude lifeline-only answers)
       const userAnswer = user ? 
         data.find(a => a.user_id === user.id && !a.lifeline_used) :
-        data.find(a => a.user_id === null && !a.lifeline_used); // Guest players have null user_id, but exclude lifeline answers
+        data.find(a => a.user_id === null && a.display_name === guestPlayer?.displayName && !a.lifeline_used); // Guest players identified by display_name
       
       if (userAnswer) {
         console.log('👤 Found user answer:', userAnswer);
@@ -568,6 +568,7 @@ const Game = () => {
         .select('*')
         .eq('game_id', gameId)
         .is('user_id', null)
+        .eq('display_name', guestPlayer?.displayName)
         .eq('question_id', currentQuestion.id);
     
     const { data: existingAnswers, error: fetchError } = await existingAnswerQuery;
@@ -611,6 +612,7 @@ const Game = () => {
       const answerData = {
         game_id: gameId,
         user_id: user?.id || null, // Explicitly set null for guests
+        display_name: user ? null : guestPlayer?.displayName, // Add display_name for guests
         question_id: currentQuestion.id,
         user_answer: answer,
         is_correct: isCorrect,
@@ -784,6 +786,7 @@ const Game = () => {
       const lifeline_data = {
         game_id: gameId,
         user_id: user?.id || null,
+        display_name: user ? null : guestPlayer?.displayName, // Add display_name for guests
         question_id: questionId, // Use the questionId variable that works for both currentQuestion and game state
         user_answer: '', // Empty answer for lifeline usage
         is_correct: false, // Not applicable for lifeline
