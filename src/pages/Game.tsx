@@ -454,10 +454,10 @@ const Game = () => {
     if (data) {
       setAnswers(data);
       
-      // Check if current user has answered
+      // Check if current user has answered (exclude lifeline-only answers)
       const userAnswer = user ? 
-        data.find(a => a.user_id === user.id) :
-        data.find(a => a.user_id === null); // Guest players have null user_id
+        data.find(a => a.user_id === user.id && !a.lifeline_used) :
+        data.find(a => a.user_id === null && !a.lifeline_used); // Guest players have null user_id, but exclude lifeline answers
       
       if (userAnswer) {
         console.log('👤 Found user answer:', userAnswer);
@@ -837,7 +837,7 @@ const Game = () => {
 
   const handleTimeUp = () => {
     if (!hasAnswered) {
-      submitAnswer(''); // Remove the timeout lifeline parameter since it's not allowed
+      submitAnswer(''); // Submit empty answer when time runs out
     }
     setTimerActive(false);
   };
