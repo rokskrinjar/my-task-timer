@@ -555,32 +555,84 @@ const Game = () => {
     
     const isCorrect = answer === currentQuestion.correct_answer;
     
-    const answerData = {
-      game_id: gameId,
-      user_id: user?.id || null, // Explicitly set null for guests
-      question_id: currentQuestion.id,
-      user_answer: answer,
-      is_correct: isCorrect,
-      lifeline_used: null // Always null for regular answers
-    };
+    // Check if there's already a lifeline record for this user/question
+    const existingAnswerQuery = user ? 
+      supabase
+        .from('game_answers')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('user_id', user.id)
+        .eq('question_id', currentQuestion.id) :
+      supabase
+        .from('game_answers')
+        .select('*')
+        .eq('game_id', gameId)
+        .is('user_id', null)
+        .eq('question_id', currentQuestion.id);
     
-    console.log('📝 Submitting answer data:', answerData);
+    const { data: existingAnswers, error: fetchError } = await existingAnswerQuery;
     
-    const { data, error } = await supabase
-      .from('game_answers')
-      .insert(answerData);
-
-    console.log('🔍 Answer submission result:', { data, error });
-
-    if (error) {
-      console.error('❌ Answer submission error:', error);
-      console.error('❌ Full error details:', JSON.stringify(error, null, 2));
+    if (fetchError) {
+      console.error('❌ Error checking existing answers:', fetchError);
       toast({
         title: "Napaka",
-        description: `Napaka pri oddaji odgovora: ${error.message}`,
+        description: "Napaka pri preverjanju obstoječih odgovorov",
         variant: "destructive",
       });
       return;
+    }
+    
+    const existingAnswer = existingAnswers?.[0];
+    
+    if (existingAnswer && existingAnswer.lifeline_used) {
+      // Update existing lifeline record with the actual answer
+      console.log('📝 Updating existing lifeline record with answer:', existingAnswer.id);
+      
+      const { error } = await supabase
+        .from('game_answers')
+        .update({
+          user_answer: answer,
+          is_correct: isCorrect
+        })
+        .eq('id', existingAnswer.id);
+        
+      if (error) {
+        console.error('❌ Answer update error:', error);
+        console.error('❌ Full error details:', JSON.stringify(error, null, 2));
+        toast({
+          title: "Napaka",
+          description: `Napaka pri posodobitvi odgovora: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Insert new answer record
+      const answerData = {
+        game_id: gameId,
+        user_id: user?.id || null, // Explicitly set null for guests
+        question_id: currentQuestion.id,
+        user_answer: answer,
+        is_correct: isCorrect,
+        lifeline_used: null // Always null for regular answers
+      };
+      
+      console.log('📝 Submitting answer data:', answerData);
+      
+      const { error } = await supabase
+        .from('game_answers')
+        .insert(answerData);
+
+      if (error) {
+        console.error('❌ Answer submission error:', error);
+        console.error('❌ Full error details:', JSON.stringify(error, null, 2));
+        toast({
+          title: "Napaka",
+          description: `Napaka pri oddaji odgovora: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     
     console.log('✅ Answer submitted successfully');
