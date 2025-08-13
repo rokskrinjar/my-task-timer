@@ -75,7 +75,8 @@ const Dashboard = () => {
     'Friends Trivia',
     'Music',
     'Movies',
-    'High School'
+    'High School',
+    'Sports'
   ];
 
   const createGame = async () => {
