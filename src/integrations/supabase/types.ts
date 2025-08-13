@@ -341,6 +341,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_participant_display_name: {
+        Args: { participant_user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
