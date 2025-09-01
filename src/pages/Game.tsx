@@ -955,26 +955,6 @@ const Game = () => {
     );
   }
 
-  // Add mobile debugging
-  useEffect(() => {
-    const logMobileLayout = () => {
-      const viewport = window.innerWidth;
-      const body = document.body.offsetWidth;
-      const html = document.documentElement.offsetWidth;
-      console.log('📱 Mobile Layout Debug:', { 
-        viewport, 
-        body, 
-        html,
-        isMobile: viewport < 768,
-        overflow: viewport < body ? 'OVERFLOW DETECTED' : 'OK'
-      });
-    };
-    
-    logMobileLayout();
-    window.addEventListener('resize', logMobileLayout);
-    return () => window.removeEventListener('resize', logMobileLayout);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Network Status Indicator */}
