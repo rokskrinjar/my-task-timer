@@ -973,26 +973,26 @@ const Game = () => {
       
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="w-full max-w-4xl mx-auto flex h-14 items-center justify-between px-2 sm:px-4 overflow-hidden">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">\n
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 overflow-hidden">
             <h1 className="text-base sm:text-xl font-bold truncate">Koda: {game.game_code}</h1>
             {game.category && (
               <Badge variant="outline" className="text-xs sm:text-sm hidden sm:inline-flex">
                 {game.category}
               </Badge>
             )}
-            <Badge variant={game.status === 'active' ? 'default' : 'secondary'} className="text-xs sm:text-sm">
+            <Badge variant={game.status === 'active' ? 'default' : 'secondary'} className="text-xs sm:text-sm flex-shrink-0">
               {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
             </Badge>
           </div>
-          <div className="flex items-center gap-1 sm:gap-4 min-w-0">
+          <div className="flex items-center gap-1 sm:gap-4 min-w-0 flex-shrink-0">
             <Users className="h-4 w-4 flex-shrink-0" />
             <span className="text-sm sm:text-base whitespace-nowrap">{participants.length} igralcev</span>
           </div>
         </div>
       </header>
 
-      <main className="w-full max-w-4xl mx-auto py-4 sm:py-8 px-2 sm:px-4 overflow-hidden">
-        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3 w-full">
+      <main className="container py-4 sm:py-8 px-2 sm:px-4 max-w-full overflow-hidden">
+        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3 w-full max-w-full overflow-hidden">
           {/* Game Area */}
           <div className="lg:col-span-2 space-y-4 lg:space-y-6 min-w-0 max-w-full">
             {game.status === 'waiting' && (
