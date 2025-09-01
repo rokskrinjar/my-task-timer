@@ -955,8 +955,28 @@ const Game = () => {
     );
   }
 
+  // Add mobile debugging
+  useEffect(() => {
+    const logMobileLayout = () => {
+      const viewport = window.innerWidth;
+      const body = document.body.offsetWidth;
+      const html = document.documentElement.offsetWidth;
+      console.log('📱 Mobile Layout Debug:', { 
+        viewport, 
+        body, 
+        html,
+        isMobile: viewport < 768,
+        overflow: viewport < body ? 'OVERFLOW DETECTED' : 'OK'
+      });
+    };
+    
+    logMobileLayout();
+    window.addEventListener('resize', logMobileLayout);
+    return () => window.removeEventListener('resize', logMobileLayout);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Network Status Indicator */}
       {!isOnline && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-md z-50 flex items-center gap-2">
@@ -971,28 +991,29 @@ const Game = () => {
         </div>
       )}
       
-      <header className="border-b bg-background/95 backdrop-blur">
-        <div className="w-full max-w-4xl mx-auto flex h-14 items-center justify-between px-2 sm:px-4 overflow-hidden">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 overflow-hidden">
-            <h1 className="text-base sm:text-xl font-bold truncate">Koda: {game.game_code}</h1>
+      <header className="border-b bg-background/95 backdrop-blur w-full overflow-x-hidden">
+        <div className="w-full mx-auto flex h-14 items-center justify-between px-2 sm:px-4 overflow-hidden max-w-full">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1 overflow-hidden">
+            <h1 className="text-sm sm:text-xl font-bold truncate">Koda: {game.game_code}</h1>
             {game.category && (
-              <Badge variant="outline" className="text-xs sm:text-sm hidden sm:inline-flex">
+              <Badge variant="outline" className="text-xs hidden sm:inline-flex">
                 {game.category}
               </Badge>
             )}
-            <Badge variant={game.status === 'active' ? 'default' : 'secondary'} className="text-xs sm:text-sm flex-shrink-0">
+            <Badge variant={game.status === 'active' ? 'default' : 'secondary'} className="text-xs flex-shrink-0">
               {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
             </Badge>
           </div>
-          <div className="flex items-center gap-1 sm:gap-4 min-w-0 flex-shrink-0">
+          <div className="flex items-center gap-1 min-w-0 flex-shrink-0">
             <Users className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm sm:text-base whitespace-nowrap">{participants.length} igralcev</span>
+            <span className="text-xs sm:text-base whitespace-nowrap">{participants.length}</span>
           </div>
         </div>
       </header>
 
-      <main className="container py-4 sm:py-8 px-2 sm:px-4 max-w-full overflow-hidden">
-        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3 w-full max-w-full overflow-hidden">
+      <main className="w-full py-4 sm:py-8 px-1 sm:px-4 overflow-x-hidden">
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="grid gap-4 lg:gap-6 lg:grid-cols-3 w-full max-w-full overflow-hidden">
           {/* Game Area */}
           <div className="lg:col-span-2 space-y-4 lg:space-y-6 min-w-0 max-w-full">
             {game.status === 'waiting' && (
@@ -1356,6 +1377,7 @@ const Game = () => {
               </Card>
             )}
           </div>
+        </div>
         </div>
       </main>
     </div>
