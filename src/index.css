@@ -101,5 +101,29 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    /* Mobile optimizations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+  }
+
+  /* Mobile button improvements */
+  button, [role="button"] {
+    touch-action: manipulation;
+    min-height: 44px; /* iOS minimum tap target */
+    min-width: 44px;
+  }
+
+  /* Prevent zoom on mobile inputs */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  @media (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
   }
 }

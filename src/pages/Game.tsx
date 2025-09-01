@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { debounce } from '@/utils/mobileOptimizations';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { Users, Clock, Trophy, Phone, HelpCircle, Target } from 'lucide-react';
+import { Users, Clock, Trophy, Phone, HelpCircle, Target, Wifi, WifiOff } from 'lucide-react';
 
 interface Question {
   id: string;
@@ -57,6 +59,10 @@ const Game = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isOnline, wasOffline } = useNetworkStatus();
+  const subscriptionRef = useRef<any>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptRef = useRef<NodeJS.Timeout | null>(null);
   
   // Check if this is a guest player
   const guestPlayer = sessionStorage.getItem('guestPlayer') ? 
@@ -158,24 +164,47 @@ const Game = () => {
         }
       });
 
+    subscriptionRef.current = gameChannel;
+
     return () => {
-      supabase.removeChannel(gameChannel);
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [user, isGuest, gameId]);
 
-  // Timer effect
+  // Timer effect with proper cleanup and dependencies
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            setTimerActive(false);
+            // Use setTimeout to avoid state update during render
+            setTimeout(() => {
+              if (!hasAnswered) {
+                submitAnswer('');
+              }
+            }, 0);
+          }
+          return Math.max(0, newTime);
+        });
       }, 1000);
-    } else if (timeLeft === 0 && timerActive) {
-      handleTimeUp();
     }
     
-    return () => clearInterval(interval);
-  }, [timerActive, timeLeft]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [timerActive, timeLeft, hasAnswered]);
 
   const fetchGameData = async () => {
     console.log('🔄 Fetching game data for gameId:', gameId);
@@ -890,12 +919,12 @@ const Game = () => {
     }
   };
 
-  const handleTimeUp = () => {
-    if (!hasAnswered) {
+  const handleTimeUp = useCallback(() => {
+    if (!hasAnswered && timerActive) {
       submitAnswer(''); // Submit empty answer when time runs out
     }
     setTimerActive(false);
-  };
+  }, [hasAnswered, timerActive]);
 
   if (loading) {
     return (
@@ -928,6 +957,20 @@ const Game = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Network Status Indicator */}
+      {!isOnline && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-md z-50 flex items-center gap-2">
+          <WifiOff className="h-4 w-4" />
+          <span className="text-sm">Nimate internetne povezave</span>
+        </div>
+      )}
+      {wasOffline && isOnline && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-md z-50 flex items-center gap-2">
+          <Wifi className="h-4 w-4" />
+          <span className="text-sm">Povezava obnovljena</span>
+        </div>
+      )}
+      
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
@@ -949,9 +992,9 @@ const Game = () => {
       </header>
 
       <main className="container py-8">
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
           {/* Game Area */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {game.status === 'waiting' && (
               <Card>
                 <CardHeader>
@@ -1019,7 +1062,7 @@ const Game = () => {
                           <Button
                             key={option}
                             variant={selectedAnswer === option ? "default" : "outline"}
-                            className="p-4 h-auto text-left justify-start"
+                            className="p-4 h-auto text-left justify-start min-h-[56px] touch-manipulation"
                             onClick={() => !hasAnswered && submitAnswer(option)}
                             disabled={hasAnswered || !timerActive}
                           >
