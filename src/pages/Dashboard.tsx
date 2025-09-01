@@ -233,11 +233,11 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Kdo naredi osnovno šolo</h1>
+        <div className="container flex h-14 items-center justify-between px-4 overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <h1 className="text-base sm:text-xl font-bold truncate">Kdo naredi osnovno šolo</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 sm:gap-4 min-w-0">
             <span className="text-sm text-muted-foreground">
               Pozdravljen, {user?.user_metadata?.display_name || user?.email}
             </span>
@@ -249,8 +249,8 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <main className="container py-4 sm:py-8 px-4 max-w-full overflow-hidden">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-full">
           {/* Create Game */}
           <Card>
             <CardHeader>
@@ -350,7 +350,7 @@ const Dashboard = () => {
         {myGames.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Nedavne igre</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-full">
               {myGames.slice(0, 6).map((game) => (
                 <Card key={game.id} className="cursor-pointer hover:bg-accent">
                   <CardHeader>

@@ -29,7 +29,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between px-4 overflow-hidden">
           <div className="flex items-center gap-4">
             <Link to="/" className="text-xl font-bold hover:text-primary transition-colors">
               Kdo naredi osnovno šolo
@@ -41,12 +41,12 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="container py-16">
+      <main className="container py-8 sm:py-16 px-4 max-w-full overflow-hidden">
         <div className="text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent break-words">
             Kdo naredi osnovno šolo?
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto break-words">
             Kviz v stilu "Lepo je biti milijonar" za osnovno šolo. Tekmujte s prijatelji in pokažite svoje znanje!
           </p>
           

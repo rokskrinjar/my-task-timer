@@ -972,29 +972,29 @@ const Game = () => {
       )}
       
       <header className="border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Koda: {game.game_code}</h1>
+        <div className="container flex h-14 items-center justify-between px-4 overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">\n
+            <h1 className="text-base sm:text-xl font-bold truncate">Koda: {game.game_code}</h1>
             {game.category && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs sm:text-sm hidden sm:inline-flex">
                 {game.category}
               </Badge>
             )}
-            <Badge variant={game.status === 'active' ? 'default' : 'secondary'}>
+            <Badge variant={game.status === 'active' ? 'default' : 'secondary'} className="text-xs sm:text-sm">
               {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
             </Badge>
           </div>
-          <div className="flex items-center gap-4">
-            <Users className="h-4 w-4" />
-            <span>{participants.length} igralcev</span>
+          <div className="flex items-center gap-1 sm:gap-4 min-w-0">
+            <Users className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm sm:text-base whitespace-nowrap">{participants.length} igralcev</span>
           </div>
         </div>
       </header>
 
-      <main className="container py-8">
-        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
+      <main className="container py-4 sm:py-8 px-4 max-w-full overflow-hidden">
+        <div className="grid gap-4 lg:gap-6 lg:grid-cols-3 max-w-full">
           {/* Game Area */}
-          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6 min-w-0 max-w-full">
             {game.status === 'waiting' && (
               <Card>
                 <CardHeader>
@@ -1026,26 +1026,26 @@ const Game = () => {
                 {/* Question */}
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                       <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <span>Vprašanje {game.current_question_number}</span>
-                          <Badge variant="outline">{currentQuestion.grade_level}. razred</Badge>
-                          <Badge variant="secondary">{currentQuestion.subject}</Badge>
+                        <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
+                           <span className="break-words">Vprašanje {game.current_question_number}</span>
+                           <Badge variant="outline" className="text-xs sm:text-sm">{currentQuestion.grade_level}. razred</Badge>
+                           <Badge variant="secondary" className="text-xs sm:text-sm break-words">{currentQuestion.subject}</Badge>
                         </CardTitle>
                       </div>
-                      {timerActive && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span className="font-mono text-lg">{timeLeft}s</span>
+                       {timerActive && (
+                         <div className="flex items-center gap-2 flex-shrink-0">
+                           <Clock className="h-4 w-4 flex-shrink-0" />
+                           <span className="font-mono text-base sm:text-lg whitespace-nowrap">{timeLeft}s</span>
                         </div>
                       )}
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg mb-6">{currentQuestion.question_text}</p>
+                    <p className="text-base sm:text-lg mb-4 sm:mb-6 break-words leading-relaxed">{currentQuestion.question_text}</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:gap-4 max-w-full">
                       {['A', 'B', 'C', 'D'].map((option) => {
                         const isHidden = hiddenOptions.includes(option);
                         const optionText = currentQuestion[`option_${option.toLowerCase()}` as keyof Question] as string;
@@ -1062,12 +1062,12 @@ const Game = () => {
                           <Button
                             key={option}
                             variant={selectedAnswer === option ? "default" : "outline"}
-                            className="p-4 h-auto text-left justify-start min-h-[56px] touch-manipulation"
+                            className="p-3 sm:p-4 h-auto text-left justify-start min-h-[56px] touch-manipulation w-full break-words"
                             onClick={() => !hasAnswered && submitAnswer(option)}
                             disabled={hasAnswered || !timerActive}
                           >
-                            <span className="font-bold mr-2">{option})</span>
-                            {optionText}
+                            <span className="font-bold mr-2 flex-shrink-0">{option})</span>
+                            <span className="break-words text-left">{optionText}</span>
                           </Button>
                         );
                       })}
