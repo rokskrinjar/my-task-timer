@@ -29,9 +29,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(async () => {
             const { error } = await supabase
               .from('profiles')
-              .insert({
+              .upsert({
                 user_id: session.user.id,
                 display_name: session.user.user_metadata?.display_name || 'Neimenovan igralec'
+              }, {
+                onConflict: 'user_id'
               });
             
             if (error) {
