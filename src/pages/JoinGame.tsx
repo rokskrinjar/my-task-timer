@@ -165,9 +165,10 @@ const JoinGame = () => {
               <Input
                 id="gameCode"
                 type="text"
+                inputMode="text"
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                placeholder="npr. ABC123"
+                placeholder="npr. ABCDEF"
                 maxLength={6}
                 required
                 className="uppercase"

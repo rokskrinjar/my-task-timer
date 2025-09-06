@@ -199,11 +199,12 @@ const GameSpectator = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Enter Game Code</label>
               <Input
+                inputMode="text"
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                placeholder="Enter 6-character code"
+                placeholder="Enter 6-letter code"
                 maxLength={6}
-                className="text-center text-lg tracking-wider"
+                className="text-center text-lg tracking-wider uppercase"
               />
             </div>
             <Button 

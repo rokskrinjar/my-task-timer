@@ -304,10 +304,12 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
-                placeholder="Koda igre"
+                inputMode="text"
+                placeholder="Koda igre (npr. ABCDEF)"
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 maxLength={6}
+                className="uppercase"
               />
               <Input
                 placeholder="Vaše ime v igri"
