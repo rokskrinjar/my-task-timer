@@ -15,7 +15,7 @@ export const HeroSection = () => {
           </h1>
           
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Preizkusite svoje znanje od 1. do 12. razreda. Lahko preživite celotno šolsko pot in dosežete maturo?
+            Preizkusite svoje osnovnošolsko in srednješolsko znanje. Lahko preživite celotno pot in dosežete maturo?
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
