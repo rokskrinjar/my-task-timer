@@ -107,9 +107,18 @@ const GameQuestions = ({
       lifeline_used: null
     };
     
+    // First delete any existing records for this game/user/question combination
+    await supabase
+      .from('game_answers')
+      .delete()
+      .eq('game_id', gameId)
+      .eq('question_id', currentQuestion.id)
+      .eq('user_id', userId || null);
+    
+    // Then insert the new answer
     const { error } = await supabase
       .from('game_answers')
-      .upsert(answerData);
+      .insert(answerData);
 
     if (error) {
       console.error('Error submitting answer:', error);
