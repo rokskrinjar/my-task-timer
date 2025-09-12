@@ -151,6 +151,27 @@ const GameQuestions = ({
       return;
     }
     
+    // Update participant score if answer is correct
+    if (isCorrect) {
+      // First get current score
+      const { data: participant } = await supabase
+        .from('game_participants')
+        .select('current_score')
+        .eq('game_id', gameId)
+        .eq('user_id', userId || null)
+        .single();
+      
+      if (participant) {
+        await supabase
+          .from('game_participants')
+          .update({ 
+            current_score: (participant.current_score || 0) + 1 
+          })
+          .eq('game_id', gameId)
+          .eq('user_id', userId || null);
+      }
+    }
+    
     setHasAnswered(true);
     setSelectedAnswer(answer);
     setTimerActive(false);
