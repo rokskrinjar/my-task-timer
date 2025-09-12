@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameData } from '@/hooks/useGameData';
+import RecentGames from '@/components/RecentGames';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -334,37 +335,12 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
-        ) : myGames.length > 0 ? (
+        ) : (
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Nedavne igre</h2>
-            <div className="grid gap-4 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-full">
-              {myGames.slice(0, 6).map((game) => (
-                <Card key={game.id} className="cursor-pointer hover:bg-accent">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Koda: {game.game_code}</CardTitle>
-                    <CardDescription>
-                      Status: {game.status === 'waiting' ? 'Čaka' : game.status === 'active' ? 'Aktivna' : 'Končana'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(game.created_at).toLocaleDateString('sl-SI')}
-                    </p>
-                    {game.status === 'waiting' && (
-                      <Button 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => navigate(`/game/${game.id}`)}
-                      >
-                        Odpri igro
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <RecentGames games={myGames} isLoading={gamesLoading} />
           </div>
-        ) : null}
+        )}
       </main>
     </div>
   );

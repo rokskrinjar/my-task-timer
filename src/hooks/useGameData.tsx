@@ -8,6 +8,10 @@ interface Game {
   status: string;
   host_id: string;
   created_at: string;
+  category: string;
+  current_question_number: number;
+  started_at?: string;
+  finished_at?: string;
   participant_count?: number;
 }
 
@@ -21,20 +25,29 @@ export const useGameData = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      // Single fast query for hosted games only
+      // Enhanced query with participant count and richer data
       const { data: hostGames, error: hostError } = await supabase
         .from('games')
-        .select('*')
+        .select(`
+          *,
+          participant_count:game_participants(count)
+        `)
         .eq('host_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(6); // Limit to reduce payload
+        .limit(8);
 
       if (hostError) {
         console.error('Error fetching games:', hostError);
         throw hostError;
       }
       
-      return hostGames || [];
+      // Transform the data to include participant count
+      const transformedGames = hostGames?.map(game => ({
+        ...game,
+        participant_count: game.participant_count?.[0]?.count || 0
+      })) || [];
+      
+      return transformedGames;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
