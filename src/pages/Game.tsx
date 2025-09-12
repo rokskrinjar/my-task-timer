@@ -11,6 +11,7 @@ import { debounce } from '@/utils/mobileOptimizations';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Users, Clock, Trophy, Phone, HelpCircle, Target, Wifi, WifiOff } from 'lucide-react';
+import QuestionStatsCard from '@/components/QuestionStatsCard';
 
 interface Question {
   id: string;
@@ -295,131 +296,40 @@ const Game = () => {
   };
 
   const fetchQuestionsForGame = async (gameData: Game) => {
-    if (!gameData?.category) {
-      console.log('⚠️ No category found for game, using default');
-      // Fallback to fetch all questions if no category
-      const { data, error } = await supabase
+    console.log('🔍 Fetching reserved questions for game:', gameData.id);
+    
+    // Try to get already reserved questions first by joining manually
+    const { data: gameQuestions, error: gameQuestionsError } = await supabase
+      .from('game_questions')
+      .select('question_id, question_order')
+      .eq('game_id', gameData.id)
+      .order('question_order');
+
+    if (!gameQuestionsError && gameQuestions && gameQuestions.length > 0) {
+      console.log('✅ Found pre-reserved questions. Count:', gameQuestions.length);
+      
+      // Fetch the actual question data
+      const questionIds = gameQuestions.map(gq => gq.question_id);
+      const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select('*')
-        .order('difficulty_order');
-      
-      if (!error && data) {
-        console.log('✅ Fetched fallback questions. Count:', data.length);
-        const randomizedQuestions = randomizeQuestionsByDifficulty(data);
-        setQuestions(randomizedQuestions);
-      }
-      return;
-    }
-    
-    console.log('🔍 Fetching questions for category:', gameData.category);
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('category', gameData.category);
+        .in('id', questionIds);
 
-    if (!error && data) {
-      console.log('✅ Fetched questions for category:', gameData.category, 'Count:', data.length);
-      const randomizedQuestions = randomizeQuestionsByDifficulty(data);
-      setQuestions(randomizedQuestions);
-    } else {
-      console.error('❌ Error fetching questions:', error);
+      if (!questionsError && questionsData) {
+        // Order questions according to game_questions order
+        const orderedQuestions = gameQuestions
+          .map(gq => questionsData.find(q => q.id === gq.question_id))
+          .filter(q => q !== undefined) as Question[];
+        setQuestions(orderedQuestions);
+        return;
+      }
     }
+
+    console.log('📝 No reserved questions found, will reserve when game starts');
+    // For now, we'll just set an empty array and reserve questions when the game starts
+    setQuestions([]);
   };
 
-  // Function to randomize questions while maintaining difficulty progression
-  const randomizeQuestionsByDifficulty = (allQuestions: Question[]) => {
-    // Group questions by grade level (difficulty)
-    const questionsByGrade: { [key: number]: Question[] } = {};
-    
-    allQuestions.forEach(question => {
-      if (!questionsByGrade[question.grade_level]) {
-        questionsByGrade[question.grade_level] = [];
-      }
-      questionsByGrade[question.grade_level].push(question);
-    });
-
-    // Shuffle questions within each grade level
-    Object.keys(questionsByGrade).forEach(grade => {
-      questionsByGrade[parseInt(grade)] = shuffleArray(questionsByGrade[parseInt(grade)]);
-    });
-
-    // Create progressive difficulty: linear progression from grade 1 to higher grades
-    const finalQuestions: Question[] = [];
-    const totalQuestions = 10; // Reduced to 10 questions
-    const grades = Object.keys(questionsByGrade).map(Number).sort();
-    
-    // Linear difficulty progression: 1-2 grade 1, 3 grade 2, 4 grade 3, 5 grade 4, etc.
-    const difficultyProgression = [
-      { grade: 1, count: 2 },  // Questions 1-2: Grade 1
-      { grade: 2, count: 1 },  // Question 3: Grade 2
-      { grade: 3, count: 1 },  // Question 4: Grade 3
-      { grade: 4, count: 1 },  // Question 5: Grade 4
-      { grade: 5, count: 1 },  // Question 6: Grade 5 (if available)
-      { grade: 4, count: 1 },  // Question 7: Grade 4 (fallback)
-      { grade: 3, count: 1 },  // Question 8: Grade 3 (fallback)
-      { grade: 4, count: 1 },  // Question 9: Grade 4 (fallback)
-      { grade: 5, count: 1 }   // Question 10: Grade 5 (hardest)
-    ];
-
-    for (const stage of difficultyProgression) {
-      if (finalQuestions.length >= totalQuestions) break;
-      
-      // Try to get question from the specified grade, fallback to available grades
-      let questionAdded = false;
-      
-      // First try the exact grade
-      if (questionsByGrade[stage.grade] && questionsByGrade[stage.grade].length > 0) {
-        const question = questionsByGrade[stage.grade].shift();
-        if (question) {
-          finalQuestions.push(question);
-          questionAdded = true;
-        }
-      }
-      
-      // If no question from exact grade, try nearby grades
-      if (!questionAdded) {
-        const availableGrades = grades.filter(g => questionsByGrade[g] && questionsByGrade[g].length > 0);
-        if (availableGrades.length > 0) {
-          // Prefer grades close to the target grade
-          const closestGrade = availableGrades.reduce((prev, curr) => 
-            Math.abs(curr - stage.grade) < Math.abs(prev - stage.grade) ? curr : prev
-          );
-          const question = questionsByGrade[closestGrade].shift();
-          if (question) {
-            finalQuestions.push(question);
-          }
-        }
-      }
-    }
-
-    // If we still need more questions, add remaining randomly
-    const remainingQuestions = Object.values(questionsByGrade).flat();
-    while (finalQuestions.length < totalQuestions && remainingQuestions.length > 0) {
-      const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
-      const question = remainingQuestions.splice(randomIndex, 1)[0];
-      finalQuestions.push(question);
-    }
-
-    console.log('📊 Randomized questions with linear difficulty progression:', {
-      total: finalQuestions.length,
-      gradeDistribution: finalQuestions.reduce((acc, q, index) => {
-        acc[`Q${index + 1} (Grade ${q.grade_level})`] = q.question_text.substring(0, 30) + '...';
-        return acc;
-      }, {} as { [key: string]: string })
-    });
-
-    return finalQuestions;
-  };
-
-  // Fisher-Yates shuffle algorithm
-  const shuffleArray = (array: any[]): any[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
 
   const fetchCurrentQuestion = async (questionId: string) => {
     console.log('🔍 fetchCurrentQuestion called with questionId:', questionId);
@@ -525,18 +435,57 @@ const Game = () => {
   };
 
   const startGame = async () => {
-    console.log('startGame called, isHost:', isHost, 'questions.length:', questions.length);
-    if (!isHost || !questions.length) return;
+    console.log('startGame called, isHost:', isHost);
+    if (!isHost || !game?.category) return;
     
-    console.log('Starting game with first question:', questions[0]);
-    const firstQuestion = questions[0];
+    console.log('🎯 Reserving questions for game...');
+    
+    // Reserve questions for this game using the new smart selection
+    const { data: reservedQuestions, error: reserveError } = await supabase
+      .rpc('select_and_reserve_game_questions', {
+        p_game_id: gameId,
+        p_category: game.category,
+        p_question_count: 15
+      });
+
+    if (reserveError || !reservedQuestions || reservedQuestions.length === 0) {
+      console.error('❌ Error reserving questions:', reserveError);
+      toast({
+        title: "Napaka",
+        description: "Napaka pri izbiri vprašanj",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ Reserved questions:', reservedQuestions.length);
+
+    // Get the first question details
+    const { data: firstQuestionData, error: firstQuestionError } = await supabase
+      .rpc('get_next_game_question', {
+        p_game_id: gameId,
+        p_current_question_number: 0
+      });
+
+    if (firstQuestionError || !firstQuestionData || firstQuestionData.length === 0) {
+      console.error('❌ Error getting first question:', firstQuestionError);
+      toast({
+        title: "Napaka",
+        description: "Napaka pri pridobivanju prvega vprašanja",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const firstQuestion = firstQuestionData[0];
+    console.log('🎯 Starting game with first question:', firstQuestion.question_id);
     
     console.log('Updating game status to active...');
     const { error } = await supabase
       .from('games')
       .update({
         status: 'active',
-        current_question_id: firstQuestion.id,
+        current_question_id: firstQuestion.question_id,
         current_question_number: 1,
         started_at: new Date().toISOString()
       })
@@ -551,15 +500,18 @@ const Game = () => {
         variant: "destructive",
       });
     } else {
+      // Refresh questions list to show reserved questions
+      await fetchQuestionsForGame(game);
+      
       // Immediately show the first question instead of waiting for realtime update
       console.log('Immediately showing first question');
-      await fetchCurrentQuestion(firstQuestion.id);
+      await fetchCurrentQuestion(firstQuestion.question_id);
       
       // Update local game state immediately
       setGame(prev => prev ? {
         ...prev,
         status: 'active',
-        current_question_id: firstQuestion.id,
+        current_question_id: firstQuestion.question_id,
         current_question_number: 1
       } : null);
       
@@ -719,12 +671,18 @@ const Game = () => {
     if (!isHost || !game) return;
     
     const nextQuestionNumber = game.current_question_number + 1;
-    const nextQuestion = questions[nextQuestionNumber - 1];
     
-    console.log('Next question number:', nextQuestionNumber, 'Next question:', nextQuestion);
+    console.log('🔍 Getting next question for question number:', nextQuestionNumber);
     
-    if (!nextQuestion) {
-      // End game
+    // Use the new function to get the next question
+    const { data: nextQuestionData, error: nextQuestionError } = await supabase
+      .rpc('get_next_game_question', {
+        p_game_id: gameId,
+        p_current_question_number: game.current_question_number
+      });
+
+    if (nextQuestionError || !nextQuestionData || nextQuestionData.length === 0) {
+      // End game - no more questions
       console.log('No more questions, ending game');
       const { error } = await supabase
         .from('games')
@@ -747,11 +705,14 @@ const Game = () => {
       return;
     }
     
+    const nextQuestion = nextQuestionData[0];
+    console.log('✅ Found next question:', nextQuestion.question_id);
+    
     console.log('Updating to next question...');
     const { error } = await supabase
       .from('games')
       .update({
-        current_question_id: nextQuestion.id,
+        current_question_id: nextQuestion.question_id,
         current_question_number: nextQuestionNumber
       })
       .eq('id', gameId);
@@ -767,12 +728,12 @@ const Game = () => {
     } else {
       // Immediately show the next question instead of waiting for realtime update
       console.log('Immediately showing next question');
-      await fetchCurrentQuestion(nextQuestion.id);
+      await fetchCurrentQuestion(nextQuestion.question_id);
       
       // Update local game state immediately
       setGame(prev => prev ? {
         ...prev,
-        current_question_id: nextQuestion.id,
+        current_question_id: nextQuestion.question_id,
         current_question_number: nextQuestionNumber
       } : null);
       
@@ -1008,8 +969,8 @@ const Game = () => {
                 </CardHeader>
                 <CardContent>
                   {isHost && (
-                    <Button onClick={startGame} disabled={participants.length < 1 || questions.length === 0}>
-                      {questions.length === 0 ? 'Nalaganje vprašanj...' : 'Začni igro'}
+                    <Button onClick={startGame} disabled={participants.length < 1}>
+                      Začni igro
                     </Button>
                   )}
                   {!isHost && (
@@ -1023,6 +984,13 @@ const Game = () => {
 
             {game.status === 'active' && currentQuestion && (
               <>
+                {/* Smart Question Progress Stats */}
+                <QuestionStatsCard 
+                  totalQuestions={15}
+                  questionsRemaining={15 - game.current_question_number}
+                  currentQuestionNumber={game.current_question_number}
+                />
+                
                 {/* Question */}
                 <Card>
                   <CardHeader>

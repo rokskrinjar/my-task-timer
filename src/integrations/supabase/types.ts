@@ -106,6 +106,30 @@ export type Database = {
           },
         ]
       }
+      game_questions: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          question_id: string
+          question_order: number
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          question_id: string
+          question_order: number
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          question_id?: string
+          question_order?: number
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           category: string | null
@@ -187,6 +211,30 @@ export type Database = {
         }
         Relationships: []
       }
+      question_usage: {
+        Row: {
+          created_at: string
+          last_used_at: string | null
+          question_id: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          last_used_at?: string | null
+          question_id: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          last_used_at?: string | null
+          question_id?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           category: string
@@ -241,9 +289,33 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_next_game_question: {
+        Args: { p_current_question_number: number; p_game_id: string }
+        Returns: {
+          correct_answer: string
+          difficulty_order: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_id: string
+          question_text: string
+        }[]
+      }
       get_participant_display_name: {
         Args: { participant_user_id: string }
         Returns: string
+      }
+      select_and_reserve_game_questions: {
+        Args: {
+          p_category: string
+          p_game_id: string
+          p_question_count?: number
+        }
+        Returns: {
+          question_id: string
+          question_order: number
+        }[]
       }
     }
     Enums: {
