@@ -279,7 +279,6 @@ const GameQuestions = ({
               <div className="h-32 mb-3">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
-                    layout="horizontal"
                     data={Object.entries(audienceVotes).map(([option, percentage]) => ({
                       option: option,
                       percentage: percentage,
@@ -287,24 +286,23 @@ const GameQuestions = ({
                     }))}
                   >
                     <XAxis 
-                      type="number"
-                      domain={[0, 100]}
-                      tick={{ fontSize: 12 }}
-                      tickLine={false}
-                      label={{ value: '%', position: 'bottom' }}
-                    />
-                    <YAxis 
-                      type="category"
                       dataKey="option" 
                       tick={{ fontSize: 12 }}
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
+                    <YAxis 
+                      domain={[0, 100]}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      label={{ value: '%', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
                       <LabelList 
                         dataKey="percentage" 
-                        position="center" 
-                        fill="white" 
+                        position="top" 
+                        fill="#374151" 
                         fontSize={12}
                         fontWeight="bold"
                         formatter={(value: number) => `${value}%`}
