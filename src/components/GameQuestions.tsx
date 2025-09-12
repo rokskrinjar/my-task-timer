@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, HelpCircle, Phone, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 interface Question {
   id: string;
@@ -278,23 +278,37 @@ const GameQuestions = ({
               <p className="text-sm font-medium text-purple-800 mb-3">Glasovanje občinstva:</p>
               <div className="h-32 mb-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={Object.entries(audienceVotes).map(([option, percentage]) => ({
-                    option: option,
-                    percentage: percentage,
-                    isCorrect: option === currentQuestion.correct_answer
-                  }))}>
+                  <BarChart 
+                    layout="horizontal"
+                    data={Object.entries(audienceVotes).map(([option, percentage]) => ({
+                      option: option,
+                      percentage: percentage,
+                      isCorrect: option === currentQuestion.correct_answer
+                    }))}
+                  >
                     <XAxis 
-                      dataKey="option" 
-                      tick={{ fontSize: 12 }}
-                      tickLine={false}
-                    />
-                    <YAxis 
+                      type="number"
                       domain={[0, 100]}
                       tick={{ fontSize: 12 }}
                       tickLine={false}
-                      label={{ value: '%', angle: -90, position: 'insideLeft' }}
+                      label={{ value: '%', position: 'bottom' }}
                     />
-                    <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
+                    <YAxis 
+                      type="category"
+                      dataKey="option" 
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
+                      <LabelList 
+                        dataKey="percentage" 
+                        position="center" 
+                        fill="white" 
+                        fontSize={12}
+                        fontWeight="bold"
+                        formatter={(value: number) => `${value}%`}
+                      />
                       {Object.entries(audienceVotes).map(([option], index) => (
                         <Cell 
                           key={index} 
@@ -304,14 +318,6 @@ const GameQuestions = ({
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {Object.entries(audienceVotes).map(([option, percentage]) => (
-                  <div key={option} className="flex justify-between">
-                    <span>Odgovor {option}:</span>
-                    <span className="font-medium">{percentage}%</span>
-                  </div>
-                ))}
               </div>
             </div>
           )}
