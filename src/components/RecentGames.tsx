@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { Podium } from '@/components/Podium';
+
+interface GameParticipant {
+  id: string;
+  display_name: string;
+  current_score: number;
+  user_id?: string;
+}
 
 interface Game {
   id: string;
@@ -18,6 +26,7 @@ interface Game {
   started_at?: string;
   finished_at?: string;
   participant_count?: number;
+  participants?: GameParticipant[];
 }
 
 interface RecentGamesProps {
@@ -261,9 +270,14 @@ const RecentGames: React.FC<RecentGamesProps> = ({ games, isLoading }) => {
                     }}
                   />
                 </div>
-              )}
-              
-              {getActionButton(game)}
+               )}
+               
+               {/* Show podium for finished games */}
+               {game.status === 'finished' && game.participants && game.participants.length > 0 && (
+                 <Podium participants={game.participants} />
+               )}
+               
+               {getActionButton(game)}
             </div>
           </CardContent>
         </Card>
