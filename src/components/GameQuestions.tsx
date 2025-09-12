@@ -47,6 +47,8 @@ const GameQuestions = ({
   const [lifelinesUsed, setLifelinesUsed] = useState<string[]>([]);
   const [showFiftyFifty, setShowFiftyFifty] = useState(false);
   const [hiddenOptions, setHiddenOptions] = useState<string[]>([]);
+  const [phoneAdvice, setPhoneAdvice] = useState<string>('');
+  const [audienceVotes, setAudienceVotes] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
 
   // Timer effect
@@ -84,6 +86,8 @@ const GameQuestions = ({
       setShowFiftyFifty(false);
       setHiddenOptions([]);
       setLifelinesUsed([]);
+      setPhoneAdvice('');
+      setAudienceVotes({});
     }
   }, [currentQuestion?.id]);
 
@@ -134,6 +138,40 @@ const GameQuestions = ({
       const wrongOptions = options.filter(opt => opt !== correctOption);
       const optionsToHide = wrongOptions.slice(0, 2);
       setHiddenOptions(optionsToHide);
+    } else if (type === 'phone_friend') {
+      // Phone a friend: gives advice with 70% chance of being correct
+      const options = ['A', 'B', 'C', 'D'];
+      const correctOption = currentQuestion.correct_answer;
+      const isCorrectAdvice = Math.random() < 0.7;
+      const advisedOption = isCorrectAdvice ? correctOption : options[Math.floor(Math.random() * options.length)];
+      setPhoneAdvice(`Prijatelj svetuje: ${advisedOption}`);
+    } else if (type === 'ask_audience') {
+      // Ask audience: generates percentage votes with bias toward correct answer
+      const options = ['A', 'B', 'C', 'D'];
+      const correctOption = currentQuestion.correct_answer;
+      const votes: {[key: string]: number} = {};
+      
+      // Generate biased votes (correct answer gets 40-60%, others split the rest)
+      const correctVote = 40 + Math.random() * 20; // 40-60%
+      const remainingVote = 100 - correctVote;
+      
+      votes[correctOption] = Math.round(correctVote);
+      
+      // Distribute remaining votes among other options
+      const otherOptions = options.filter(opt => opt !== correctOption);
+      let remaining = remainingVote;
+      
+      otherOptions.forEach((option, index) => {
+        if (index === otherOptions.length - 1) {
+          votes[option] = Math.round(remaining);
+        } else {
+          const vote = Math.random() * (remaining / (otherOptions.length - index));
+          votes[option] = Math.round(vote);
+          remaining -= vote;
+        }
+      });
+      
+      setAudienceVotes(votes);
     }
     
     // Record lifeline usage
@@ -227,6 +265,27 @@ const GameQuestions = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Show lifeline results */}
+          {phoneAdvice && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-medium text-blue-800">{phoneAdvice}</p>
+            </div>
+          )}
+          
+          {Object.keys(audienceVotes).length > 0 && (
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <p className="text-sm font-medium text-purple-800 mb-2">Glasovanje občinstva:</p>
+              <div className="space-y-1">
+                {Object.entries(audienceVotes).map(([option, percentage]) => (
+                  <div key={option} className="flex justify-between text-sm">
+                    <span>Odgovor {option}:</span>
+                    <span className="font-medium">{percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {options.map((option) => {
             const isHidden = hiddenOptions.includes(option.key);
             const isSelected = selectedAnswer === option.key;
