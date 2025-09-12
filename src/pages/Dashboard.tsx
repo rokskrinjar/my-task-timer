@@ -25,7 +25,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Osnovna šola');
+  const [selectedCategory, setSelectedCategory] = useState('Šola');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,7 +34,7 @@ const Dashboard = () => {
   const { myGames, gamesLoading, invalidateGames } = useGameData();
 
   const categories = [
-    'Osnovna šola',
+    'Šola',
     'Geografija', 
     'Živali',
     'Friends Trivia',
