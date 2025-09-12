@@ -61,7 +61,8 @@ const GameQuestions = ({
           const newTime = prev - 1;
           if (newTime <= 0) {
             setTimerActive(false);
-            if (!hasAnswered) {
+            // Only auto-submit if user hasn't answered and hasn't selected anything
+            if (!hasAnswered && !selectedAnswer) {
               handleSubmitAnswer('');
             }
           }
@@ -195,9 +196,17 @@ const GameQuestions = ({
       lifeline_used: type
     };
     
+    // Delete any existing lifeline record, then insert new one
     await supabase
       .from('game_answers')
-      .upsert(lifeline_data);
+      .delete()
+      .eq('game_id', gameId)
+      .eq('question_id', currentQuestion.id)
+      .eq('user_id', userId || null);
+      
+    await supabase
+      .from('game_answers')
+      .insert(lifeline_data);
   };
 
   if (!currentQuestion) {
