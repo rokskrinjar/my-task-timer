@@ -276,32 +276,25 @@ const GameQuestions = ({
           {Object.keys(audienceVotes).length > 0 && (
             <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
               <p className="text-sm font-medium text-purple-800 mb-3">Glasovanje občinstva:</p>
-              <div className="h-32 mb-3">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="horizontal"
-                    width={400}
-                    height={120}
-                    data={[
-                      { answer: 'A', percentage: audienceVotes['A'] || 0, isCorrect: currentQuestion.correct_answer === 'A' },
-                      { answer: 'B', percentage: audienceVotes['B'] || 0, isCorrect: currentQuestion.correct_answer === 'B' },
-                      { answer: 'C', percentage: audienceVotes['C'] || 0, isCorrect: currentQuestion.correct_answer === 'C' },
-                      { answer: 'D', percentage: audienceVotes['D'] || 0, isCorrect: currentQuestion.correct_answer === 'D' }
-                    ]}
-                  >
-                    <XAxis type="number" domain={[0, 100]} />
-                    <YAxis type="category" dataKey="answer" />
-                    <Bar dataKey="percentage">
-                      {['A', 'B', 'C', 'D'].map((option, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={currentQuestion.correct_answer === option ? "#22c55e" : "#a855f7"} 
+              <div className="space-y-2">
+                {['A', 'B', 'C', 'D'].map((option) => {
+                  const percentage = audienceVotes[option] || 0;
+                  const isCorrect = currentQuestion.correct_answer === option;
+                  return (
+                    <div key={option} className="flex items-center gap-2">
+                      <span className="font-bold text-sm w-4">{option}</span>
+                      <div className="flex-1 bg-gray-200 rounded h-6 relative">
+                        <div 
+                          className={`h-full rounded transition-all ${isCorrect ? 'bg-green-500' : 'bg-purple-500'}`}
+                          style={{ width: `${percentage}%` }}
                         />
-                      ))}
-                      <LabelList dataKey="percentage" position="right" formatter={(value: number) => `${value}%`} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                        <span className="absolute right-1 top-0 text-xs font-medium leading-6 text-gray-700">
+                          {percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
