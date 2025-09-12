@@ -285,22 +285,24 @@ const GameQuestions = ({
                       percentage: percentage,
                       isCorrect: option === currentQuestion.correct_answer
                     }))}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <XAxis 
                       type="number"
                       domain={[0, 100]}
                       tick={{ fontSize: 12 }}
                       tickLine={false}
-                      axisLine={false}
+                      axisLine={true}
                     />
                     <YAxis 
                       type="category"
                       dataKey="option" 
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 14, fontWeight: 'bold' }}
                       tickLine={false}
-                      axisLine={false}
+                      axisLine={true}
+                      width={30}
                     />
-                    <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="percentage" radius={[0, 4, 4, 0]} height={20}>
                       <LabelList 
                         dataKey="percentage" 
                         position="right" 
