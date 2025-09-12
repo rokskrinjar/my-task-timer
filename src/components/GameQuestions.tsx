@@ -109,10 +109,7 @@ const GameQuestions = ({
     
     const { error } = await supabase
       .from('game_answers')
-      .upsert(answerData, { 
-        onConflict: 'game_id,user_id,question_id',
-        ignoreDuplicates: false 
-      });
+      .upsert(answerData);
 
     if (error) {
       console.error('Error submitting answer:', error);
@@ -191,7 +188,7 @@ const GameQuestions = ({
     
     await supabase
       .from('game_answers')
-      .insert(lifeline_data);
+      .upsert(lifeline_data);
   };
 
   if (!currentQuestion) {
