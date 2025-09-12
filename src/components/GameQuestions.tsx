@@ -129,12 +129,18 @@ const GameQuestions = ({
     };
     
     // First delete any existing records for this game/user/question combination
-    await supabase
+    let deleteQuery = supabase
       .from('game_answers')
       .delete()
       .eq('game_id', gameId)
       .eq('question_id', currentQuestion.id)
       .eq('user_id', userId || null);
+    
+    if (isGuest && guestDisplayName) {
+      deleteQuery = deleteQuery.eq('display_name', guestDisplayName);
+    }
+    
+    await deleteQuery;
     
     // Then insert the new answer
     const { error } = await supabase
@@ -153,22 +159,33 @@ const GameQuestions = ({
     
     // Update participant score if answer is correct
     if (isCorrect) {
-      // First get current score
-      const { data: participant } = await supabase
+      // First get current score - properly identify guest participants
+      let participantQuery = supabase
         .from('game_participants')
         .select('current_score')
         .eq('game_id', gameId)
-        .eq('user_id', userId || null)
-        .single();
+        .eq('user_id', userId || null);
+      
+      if (isGuest && guestDisplayName) {
+        participantQuery = participantQuery.eq('display_name', guestDisplayName);
+      }
+      
+      const { data: participant } = await participantQuery.single();
       
       if (participant) {
-        await supabase
+        let updateQuery = supabase
           .from('game_participants')
           .update({ 
             current_score: (participant.current_score || 0) + 1 
           })
           .eq('game_id', gameId)
           .eq('user_id', userId || null);
+        
+        if (isGuest && guestDisplayName) {
+          updateQuery = updateQuery.eq('display_name', guestDisplayName);
+        }
+        
+        await updateQuery;
       }
     }
     
@@ -239,12 +256,18 @@ const GameQuestions = ({
     };
     
     // Delete any existing lifeline record, then insert new one
-    await supabase
+    let deleteLifelineQuery = supabase
       .from('game_answers')
       .delete()
       .eq('game_id', gameId)
       .eq('question_id', currentQuestion.id)
       .eq('user_id', userId || null);
+    
+    if (isGuest && guestDisplayName) {
+      deleteLifelineQuery = deleteLifelineQuery.eq('display_name', guestDisplayName);
+    }
+    
+    await deleteLifelineQuery;
       
     await supabase
       .from('game_answers')
