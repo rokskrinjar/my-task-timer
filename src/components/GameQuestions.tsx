@@ -239,7 +239,10 @@ const GameQuestions = ({
               <Button
                 key={option.key}
                 variant={isCorrect ? "default" : isWrong ? "destructive" : isSelected ? "secondary" : "outline"}
-                className="w-full justify-start h-auto p-4 text-left"
+                className={`w-full justify-start h-auto p-4 text-left ${
+                  isCorrect ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : 
+                  isWrong ? "bg-red-600 hover:bg-red-700 text-white border-red-600" : ""
+                }`}
                 onClick={() => {
                   if (!hasAnswered) {
                     handleSubmitAnswer(option.key);

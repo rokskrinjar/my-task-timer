@@ -121,7 +121,7 @@ const Game = () => {
         subscriptionRef.current = null;
       }
     };
-  }, [user, isGuest, gameId]);
+  }, [user, isGuest, gameId, navigate]);
 
   const fetchGameData = async () => {
     console.log('🔄 Fetching game data for gameId:', gameId);
@@ -146,6 +146,9 @@ const Game = () => {
       console.log('📋 Fetched game data:', gameData);
       setGame(gameData);
       
+      // Fetch participants first to ensure we have them for auto-progression
+      await fetchParticipants(gameData.id);
+      
       // Fetch questions for the game
       await fetchQuestionsForGame(gameData);
       
@@ -160,7 +163,45 @@ const Game = () => {
     }
   };
 
+  const fetchParticipants = async (gameId: string) => {
+    console.log('🔍 Fetching participants for game:', gameId);
+    const { data: participantsData, error: participantsError } = await supabase
+      .from('game_participants')
+      .select('*')
+      .eq('game_id', gameId);
+
+    if (!participantsError && participantsData) {
+      console.log('✅ Found participants:', participantsData.length);
+      
+      // Fetch profiles for authenticated users
+      const participantsWithProfiles = await Promise.all(
+        participantsData.map(async (participant) => {
+          if (participant.user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', participant.user_id)
+              .single();
+
+            return {
+              ...participant,
+              profiles: profileData || { display_name: 'Neimenovan igralec' }
+            };
+          } else {
+            return {
+              ...participant,
+              profiles: { display_name: participant.display_name || 'Gost' }
+            };
+          }
+        })
+      );
+      
+      setParticipants(participantsWithProfiles);
+    }
+  };
+
   const handleParticipantsChange = (newParticipants: Participant[]) => {
+    console.log('🔄 Participants updated:', newParticipants.length);
     setParticipants(newParticipants);
   };
 
