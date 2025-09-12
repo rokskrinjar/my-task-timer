@@ -280,19 +280,21 @@ const GameQuestions = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
                     layout="horizontal"
-                    data={Object.entries(audienceVotes).map(([option, percentage]) => ({
-                      option: option,
-                      percentage: percentage,
-                      isCorrect: option === currentQuestion.correct_answer
-                    }))}
-                    margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
+                    data={Object.entries(audienceVotes)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([option, percentage]) => ({
+                        option: option,
+                        percentage: Number(percentage),
+                        isCorrect: option === currentQuestion.correct_answer
+                      }))}
+                    margin={{ top: 5, right: 50, left: 30, bottom: 5 }}
                   >
                     <XAxis 
                       type="number"
                       domain={[0, 100]}
                       tick={{ fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
+                      tickLine={true}
+                      axisLine={true}
                     />
                     <YAxis 
                       type="category"
@@ -300,9 +302,13 @@ const GameQuestions = ({
                       tick={{ fontSize: 14, fontWeight: 'bold' }}
                       tickLine={false}
                       axisLine={false}
-                      width={20}
+                      width={25}
                     />
-                    <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
+                    <Bar 
+                      dataKey="percentage" 
+                      radius={[0, 4, 4, 0]}
+                      fill="#8b5cf6"
+                    >
                       <LabelList 
                         dataKey="percentage" 
                         position="right" 
@@ -311,9 +317,11 @@ const GameQuestions = ({
                         fontWeight="bold"
                         formatter={(value: number) => `${value}%`}
                       />
-                      {Object.entries(audienceVotes).map(([option], index) => (
+                      {Object.entries(audienceVotes)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([option], index) => (
                         <Cell 
-                          key={index} 
+                          key={`cell-${index}`}
                           fill={option === currentQuestion.correct_answer ? "#16a34a" : "#8b5cf6"} 
                         />
                       ))}
