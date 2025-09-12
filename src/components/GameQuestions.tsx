@@ -279,7 +279,7 @@ const GameQuestions = ({
               <div className="h-32 mb-3">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={Object.entries(audienceVotes).map(([option, percentage]) => ({
-                    option: `Odgovor ${option}`,
+                    option: option,
                     percentage: percentage,
                     isCorrect: option === currentQuestion.correct_answer
                   }))}>
