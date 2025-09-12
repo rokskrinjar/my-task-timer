@@ -97,12 +97,18 @@ const GameQuestions = ({
   // Fetch game-wide lifeline usage on component mount
   useEffect(() => {
     const fetchGameLifelines = async () => {
-      const { data } = await supabase
+      let lifelineQuery = supabase
         .from('game_answers')
         .select('lifeline_used')
         .eq('game_id', gameId)
         .eq('user_id', userId || null)
         .not('lifeline_used', 'is', null);
+      
+      if (isGuest && guestDisplayName) {
+        lifelineQuery = lifelineQuery.eq('display_name', guestDisplayName);
+      }
+      
+      const { data } = await lifelineQuery;
       
       if (data) {
         const usedLifelines = data.map(record => record.lifeline_used).filter(Boolean);
@@ -111,7 +117,7 @@ const GameQuestions = ({
     };
     
     fetchGameLifelines();
-  }, [gameId, userId]);
+  }, [gameId, userId, isGuest, guestDisplayName]);
 
   const handleSubmitAnswer = async (answer: string) => {
     if (!currentQuestion || hasAnswered) return;
