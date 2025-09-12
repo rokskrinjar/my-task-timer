@@ -30,7 +30,7 @@ export const HeroSection = () => {
           <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
             <Link to="/join">
               <Play className="mr-2 h-5 w-5" />
-              Začni igro ZDAJ!
+              Pridruži se igri
             </Link>
           </Button>
           
