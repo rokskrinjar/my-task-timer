@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useGameData } from '@/hooks/useGameData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,27 +30,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Use React Query for efficient data fetching with caching
-  const { data: myGames = [], isLoading: gamesLoading } = useQuery({
-    queryKey: ['user-games', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      // Fast query: get all hosted games
-      const { data: hostGames, error: hostError } = await supabase
-        .from('games')
-        .select('*')
-        .eq('host_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (hostError) throw hostError;
-      return hostGames || [];
-    },
-    enabled: !!user,
-    staleTime: 30000, // Cache for 30 seconds
-    refetchOnWindowFocus: false,
-  });
+  // Use optimized game data hook
+  const { myGames, gamesLoading, invalidateGames } = useGameData();
 
   const categories = [
     'Osnovna šola',
@@ -124,6 +105,9 @@ const Dashboard = () => {
         title: "Igra ustvarjena",
         description: `Koda igre: ${codeData}`,
       });
+      
+      // Invalidate games cache to refresh the list
+      invalidateGames();
       
       navigate(`/game/${gameData.id}`);
     }
