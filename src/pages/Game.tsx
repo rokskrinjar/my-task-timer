@@ -11,6 +11,7 @@ import { Users, Trophy, Wifi, WifiOff, Play, SkipForward } from 'lucide-react';
 import QuestionStatsCard from '@/components/QuestionStatsCard';
 import GameParticipants from '@/components/GameParticipants';
 import GameQuestions from '@/components/GameQuestions';
+import { GameResults } from '@/components/GameResults';
 
 interface Question {
   id: string;
@@ -595,18 +596,16 @@ const Game = () => {
                 guestDisplayName={guestPlayer?.displayName}
               />
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Trophy className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
-                  <h2 className="text-2xl font-bold mb-2">Igra je končana!</h2>
-                  <p className="text-muted-foreground mb-4">
-                    Poglejte končne rezultate v tabeli igralcev
-                  </p>
-                  <Button onClick={() => navigate('/dashboard')}>
-                    Nazaj na nadzorno ploščo
-                  </Button>
-                </CardContent>
-              </Card>
+              <GameResults 
+                game={game}
+                participants={participants.map(p => ({
+                  id: p.id,
+                  display_name: p.display_name || p.profiles?.display_name || 'Unknown',
+                  current_score: p.current_score,
+                  user_id: p.user_id || undefined
+                }))}
+                totalQuestions={questions.length}
+              />
             )}
           </div>
         </div>
