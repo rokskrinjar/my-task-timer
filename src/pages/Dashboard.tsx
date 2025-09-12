@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Users, LogOut, Trophy } from 'lucide-react';
 
@@ -24,40 +26,31 @@ const Dashboard = () => {
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Osnovna šola');
-  const [myGames, setMyGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      fetchMyGames();
-    }
-  }, [user]);
+  // Use React Query for efficient data fetching with caching
+  const { data: myGames = [], isLoading: gamesLoading } = useQuery({
+    queryKey: ['user-games', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      // Fast query: get all hosted games
+      const { data: hostGames, error: hostError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('host_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-  const fetchMyGames = async () => {
-    if (!user) return;
-
-    // Get all games where user is either host or participant in a single optimized query
-    const { data: games, error } = await supabase
-      .from('games')
-      .select(`
-        *,
-        game_participants!left(user_id)
-      `)
-      .or(`host_id.eq.${user.id},game_participants.user_id.eq.${user.id}`)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching games:', error);
-    } else {
-      // Remove duplicates that might occur from the join
-      const uniqueGames = games?.filter((game, index, self) => 
-        index === self.findIndex(g => g.id === game.id)
-      ) || [];
-      setMyGames(uniqueGames);
-    }
-  };
+      if (hostError) throw hostError;
+      return hostGames || [];
+    },
+    enabled: !!user,
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: false,
+  });
 
   const categories = [
     'Osnovna šola',
@@ -333,14 +326,31 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{myGames.length}</div>
+              <div className="text-2xl font-bold">{gamesLoading ? '...' : myGames.length}</div>
               <p className="text-sm text-muted-foreground">Skupno iger</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Recent Games */}
-        {myGames.length > 0 && (
+        {gamesLoading ? (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Nedavne igre</h2>
+            <div className="grid gap-4 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-full">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-20" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : myGames.length > 0 ? (
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Nedavne igre</h2>
             <div className="grid gap-4 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-full">
@@ -370,7 +380,7 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </main>
     </div>
   );
