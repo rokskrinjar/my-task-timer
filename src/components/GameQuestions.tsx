@@ -170,13 +170,23 @@ const GameQuestions = ({
     
     // Update participant score if answer is correct
     if (isCorrect) {
-      console.log('Updating score for correct answer...', { 
+      // MOBILE DEBUG: Add comprehensive mobile environment logging
+      const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown';
+      const windowLocation = typeof window !== 'undefined' ? window.location.href : 'unknown';
+      
+      console.log('🎯 MOBILE DEBUG - Updating score for correct answer...', { 
         gameId, 
         userId, 
         isGuest, 
         guestDisplayName,
         hasUserId: !!userId,
-        hasGuestName: !!guestDisplayName 
+        hasGuestName: !!guestDisplayName,
+        isMobile,
+        userAgent,
+        windowLocation,
+        authState: userId ? 'authenticated' : 'guest',
+        timestamp: new Date().toISOString()
       });
       
       try {
@@ -249,10 +259,28 @@ const GameQuestions = ({
           .eq('id', participant.id);
         
         if (updateError) {
-          console.error('Error updating participant score:', updateError);
+          console.error('❌ MOBILE DEBUG - Error updating participant score:', updateError);
+          console.error('❌ MOBILE DEBUG - Full error object:', JSON.stringify(updateError, null, 2));
+          console.error('❌ MOBILE DEBUG - Update details:', {
+            participantId: participant.id,
+            participantUserId: participant.user_id,
+            participantDisplayName: participant.display_name,
+            currentAuthUserId: userId,
+            isGuest,
+            guestDisplayName,
+            currentScore: participant.current_score,
+            newScore: (participant.current_score || 0) + 1,
+            isMobile: typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+          });
+          
+          // Check if it's an RLS policy violation
+          if (updateError.message?.includes('policy') || updateError.code === 'PGRST116') {
+            console.error('🚨 MOBILE DEBUG - RLS Policy violation detected!');
+          }
+          
           toast({
-            title: "Napaka",
-            description: "Napaka pri posodabljanju rezultata: " + updateError.message,
+            title: "Napaka pri posodabljanju rezultata",
+            description: `Mobile: ${updateError.message} (${updateError.code || 'no code'})`,
             variant: "destructive",
           });
         } else {
