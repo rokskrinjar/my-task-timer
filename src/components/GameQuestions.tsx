@@ -165,6 +165,8 @@ const GameQuestions = ({
     
     // Update participant score if answer is correct
     if (isCorrect) {
+      console.log('Updating score for correct answer...', { gameId, userId, isGuest, guestDisplayName });
+      
       // First get current score - properly identify guest participants
       let participantQuery = supabase
         .from('game_participants')
@@ -176,9 +178,21 @@ const GameQuestions = ({
         participantQuery = participantQuery.eq('display_name', guestDisplayName);
       }
       
-      const { data: participant } = await participantQuery.single();
+      const { data: participant, error: fetchError } = await participantQuery.maybeSingle();
+      
+      if (fetchError) {
+        console.error('Error fetching participant for score update:', fetchError);
+        toast({
+          title: "Napaka",
+          description: "Napaka pri posodabljanju rezultata",
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (participant) {
+        console.log('Found participant, updating score from', participant.current_score, 'to', (participant.current_score || 0) + 1);
+        
         let updateQuery = supabase
           .from('game_participants')
           .update({ 
@@ -191,7 +205,20 @@ const GameQuestions = ({
           updateQuery = updateQuery.eq('display_name', guestDisplayName);
         }
         
-        await updateQuery;
+        const { error: updateError } = await updateQuery;
+        
+        if (updateError) {
+          console.error('Error updating participant score:', updateError);
+          toast({
+            title: "Napaka",
+            description: "Napaka pri posodabljanju rezultata",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Score updated successfully');
+        }
+      } else {
+        console.error('No participant found for score update');
       }
     }
     
