@@ -101,8 +101,13 @@ const GameQuestions = ({
         .from('game_answers')
         .select('lifeline_used')
         .eq('game_id', gameId)
-        .eq('user_id', userId || null)
         .not('lifeline_used', 'is', null);
+      
+      if (userId) {
+        lifelineQuery = lifelineQuery.eq('user_id', userId);
+      } else {
+        lifelineQuery = lifelineQuery.is('user_id', null);
+      }
       
       if (isGuest && guestDisplayName) {
         lifelineQuery = lifelineQuery.eq('display_name', guestDisplayName);
@@ -171,8 +176,13 @@ const GameQuestions = ({
       let participantQuery = supabase
         .from('game_participants')
         .select('current_score')
-        .eq('game_id', gameId)
-        .eq('user_id', userId || null);
+        .eq('game_id', gameId);
+      
+      if (userId) {
+        participantQuery = participantQuery.eq('user_id', userId);
+      } else {
+        participantQuery = participantQuery.is('user_id', null);
+      }
       
       if (isGuest && guestDisplayName) {
         participantQuery = participantQuery.eq('display_name', guestDisplayName);
@@ -198,8 +208,13 @@ const GameQuestions = ({
           .update({ 
             current_score: (participant.current_score || 0) + 1 
           })
-          .eq('game_id', gameId)
-          .eq('user_id', userId || null);
+          .eq('game_id', gameId);
+        
+        if (userId) {
+          updateQuery = updateQuery.eq('user_id', userId);
+        } else {
+          updateQuery = updateQuery.is('user_id', null);
+        }
         
         if (isGuest && guestDisplayName) {
           updateQuery = updateQuery.eq('display_name', guestDisplayName);
