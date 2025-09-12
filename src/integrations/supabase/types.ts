@@ -313,8 +313,8 @@ export type Database = {
           p_question_count?: number
         }
         Returns: {
-          question_id: string
-          question_order: number
+          result_question_id: string
+          result_question_order: number
         }[]
       }
     }
