@@ -144,8 +144,13 @@ const GameQuestions = ({
       .from('game_answers')
       .delete()
       .eq('game_id', gameId)
-      .eq('question_id', currentQuestion.id)
-      .eq('user_id', userId || null);
+      .eq('question_id', currentQuestion.id);
+    
+    if (userId) {
+      deleteQuery = deleteQuery.eq('user_id', userId);
+    } else {
+      deleteQuery = deleteQuery.is('user_id', null);
+    }
     
     if (isGuest && guestDisplayName) {
       deleteQuery = deleteQuery.eq('display_name', guestDisplayName);
@@ -342,8 +347,13 @@ const GameQuestions = ({
       .from('game_answers')
       .delete()
       .eq('game_id', gameId)
-      .eq('question_id', currentQuestion.id)
-      .eq('user_id', userId || null);
+      .eq('question_id', currentQuestion.id);
+    
+    if (userId) {
+      deleteLifelineQuery = deleteLifelineQuery.eq('user_id', userId);
+    } else {
+      deleteLifelineQuery = deleteLifelineQuery.is('user_id', null);
+    }
     
     if (isGuest && guestDisplayName) {
       deleteLifelineQuery = deleteLifelineQuery.eq('display_name', guestDisplayName);
