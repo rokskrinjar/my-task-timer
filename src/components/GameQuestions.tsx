@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, HelpCircle, Phone, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 
 interface Question {
   id: string;
@@ -273,11 +274,40 @@ const GameQuestions = ({
           )}
           
           {Object.keys(audienceVotes).length > 0 && (
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-              <p className="text-sm font-medium text-purple-800 mb-2">Glasovanje občinstva:</p>
-              <div className="space-y-1">
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <p className="text-sm font-medium text-purple-800 mb-3">Glasovanje občinstva:</p>
+              <div className="h-32 mb-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={Object.entries(audienceVotes).map(([option, percentage]) => ({
+                    option: `Odgovor ${option}`,
+                    percentage: percentage,
+                    isCorrect: option === currentQuestion.correct_answer
+                  }))}>
+                    <XAxis 
+                      dataKey="option" 
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      domain={[0, 100]}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      label={{ value: '%', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
+                      {Object.entries(audienceVotes).map(([option], index) => (
+                        <Cell 
+                          key={index} 
+                          fill={option === currentQuestion.correct_answer ? "#16a34a" : "#8b5cf6"} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
                 {Object.entries(audienceVotes).map(([option, percentage]) => (
-                  <div key={option} className="flex justify-between text-sm">
+                  <div key={option} className="flex justify-between">
                     <span>Odgovor {option}:</span>
                     <span className="font-medium">{percentage}%</span>
                   </div>
