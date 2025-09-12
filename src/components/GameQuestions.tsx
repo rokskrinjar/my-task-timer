@@ -46,6 +46,7 @@ const GameQuestions = ({
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerActive, setTimerActive] = useState(false);
   const [lifelinesUsed, setLifelinesUsed] = useState<string[]>([]);
+  const [gameLifelinesUsed, setGameLifelinesUsed] = useState<string[]>([]);
   const [showFiftyFifty, setShowFiftyFifty] = useState(false);
   const [hiddenOptions, setHiddenOptions] = useState<string[]>([]);
   const [phoneAdvice, setPhoneAdvice] = useState<string>('');
@@ -78,7 +79,7 @@ const GameQuestions = ({
     };
   }, [timerActive, timeLeft, hasAnswered]);
 
-  // Reset state when question changes
+  // Reset state when question changes (but keep game-wide lifeline usage)
   useEffect(() => {
     if (currentQuestion) {
       setSelectedAnswer('');
@@ -87,11 +88,30 @@ const GameQuestions = ({
       setTimerActive(true);
       setShowFiftyFifty(false);
       setHiddenOptions([]);
-      setLifelinesUsed([]);
+      setLifelinesUsed([]); // Reset per-question usage
       setPhoneAdvice('');
       setAudienceVotes({});
     }
   }, [currentQuestion?.id]);
+
+  // Fetch game-wide lifeline usage on component mount
+  useEffect(() => {
+    const fetchGameLifelines = async () => {
+      const { data } = await supabase
+        .from('game_answers')
+        .select('lifeline_used')
+        .eq('game_id', gameId)
+        .eq('user_id', userId || null)
+        .not('lifeline_used', 'is', null);
+      
+      if (data) {
+        const usedLifelines = data.map(record => record.lifeline_used).filter(Boolean);
+        setGameLifelinesUsed(usedLifelines);
+      }
+    };
+    
+    fetchGameLifelines();
+  }, [gameId, userId]);
 
   const handleSubmitAnswer = async (answer: string) => {
     if (!currentQuestion || hasAnswered) return;
@@ -138,9 +158,10 @@ const GameQuestions = ({
   };
 
   const useLifeline = async (type: string) => {
-    if (lifelinesUsed.includes(type) || !currentQuestion) return;
+    if (gameLifelinesUsed.includes(type) || !currentQuestion) return;
     
     setLifelinesUsed([...lifelinesUsed, type]);
+    setGameLifelinesUsed([...gameLifelinesUsed, type]);
     
     if (type === 'fifty_fifty') {
       setShowFiftyFifty(true);
@@ -243,7 +264,7 @@ const GameQuestions = ({
                 size="sm"
                 variant="outline"
                 onClick={() => useLifeline('fifty_fifty')}
-                disabled={lifelinesUsed.includes('fifty_fifty') || hasAnswered}
+                disabled={gameLifelinesUsed.includes('fifty_fifty') || hasAnswered}
               >
                 <Target className="h-4 w-4" />
                 50:50
@@ -252,7 +273,7 @@ const GameQuestions = ({
                 size="sm"
                 variant="outline"
                 onClick={() => useLifeline('phone_friend')}
-                disabled={lifelinesUsed.includes('phone_friend') || hasAnswered}
+                disabled={gameLifelinesUsed.includes('phone_friend') || hasAnswered}
               >
                 <Phone className="h-4 w-4" />
                 Pokliči
@@ -261,7 +282,7 @@ const GameQuestions = ({
                 size="sm"
                 variant="outline"
                 onClick={() => useLifeline('ask_audience')}
-                disabled={lifelinesUsed.includes('ask_audience') || hasAnswered}
+                disabled={gameLifelinesUsed.includes('ask_audience') || hasAnswered}
               >
                 <HelpCircle className="h-4 w-4" />
                 Občinstvo
