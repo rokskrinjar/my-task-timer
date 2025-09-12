@@ -170,39 +170,77 @@ const GameQuestions = ({
     
     // Update participant score if answer is correct
     if (isCorrect) {
-      console.log('Updating score for correct answer...', { gameId, userId, isGuest, guestDisplayName });
+      console.log('Updating score for correct answer...', { 
+        gameId, 
+        userId, 
+        isGuest, 
+        guestDisplayName,
+        hasUserId: !!userId,
+        hasGuestName: !!guestDisplayName 
+      });
       
-      // First get current score - properly identify guest participants
-      let participantQuery = supabase
-        .from('game_participants')
-        .select('current_score')
-        .eq('game_id', gameId);
-      
-      if (userId) {
-        participantQuery = participantQuery.eq('user_id', userId);
-      } else {
-        participantQuery = participantQuery.is('user_id', null);
-      }
-      
-      if (isGuest && guestDisplayName) {
-        participantQuery = participantQuery.eq('display_name', guestDisplayName);
-      }
-      
-      const { data: participant, error: fetchError } = await participantQuery.maybeSingle();
-      
-      if (fetchError) {
-        console.error('Error fetching participant for score update:', fetchError);
-        toast({
-          title: "Napaka",
-          description: "Napaka pri posodabljanju rezultata",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (participant) {
-        console.log('Found participant, updating score from', participant.current_score, 'to', (participant.current_score || 0) + 1);
+      try {
+        // Build participant query with proper conditions for guests
+        let participantQuery = supabase
+          .from('game_participants')
+          .select('current_score, id, user_id, display_name')
+          .eq('game_id', gameId);
         
+        if (isGuest && guestDisplayName) {
+          // For guests: user_id must be null AND display_name must match
+          participantQuery = participantQuery
+            .is('user_id', null)
+            .eq('display_name', guestDisplayName);
+        } else if (userId) {
+          // For authenticated users: user_id must match
+          participantQuery = participantQuery.eq('user_id', userId);
+        } else {
+          console.error('Invalid participant identification: no userId or guestDisplayName');
+          return;
+        }
+        
+        console.log('Fetching participant with conditions:', {
+          isGuest,
+          guestDisplayName,
+          userId,
+          queryDescription: isGuest ? 'user_id IS NULL AND display_name = ' + guestDisplayName : 'user_id = ' + userId
+        });
+        
+        const { data: participant, error: fetchError } = await participantQuery.maybeSingle();
+        
+        if (fetchError) {
+          console.error('Error fetching participant for score update:', fetchError);
+          toast({
+            title: "Napaka",
+            description: "Napaka pri pridobivanju podatkov udeleženca",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (!participant) {
+          console.error('No participant found for score update. Searching all participants for debug...');
+          
+          // Debug: fetch all participants for this game to see what's available
+          const { data: allParticipants } = await supabase
+            .from('game_participants')
+            .select('*')
+            .eq('game_id', gameId);
+          
+          console.log('All participants in game:', allParticipants);
+          
+          toast({
+            title: "Napaka",
+            description: "Udeleženec ni najden v igri",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Found participant:', participant);
+        console.log('Updating score from', participant.current_score, 'to', (participant.current_score || 0) + 1);
+        
+        // Build update query with the same conditions
         let updateQuery = supabase
           .from('game_participants')
           .update({ 
@@ -210,14 +248,14 @@ const GameQuestions = ({
           })
           .eq('game_id', gameId);
         
-        if (userId) {
-          updateQuery = updateQuery.eq('user_id', userId);
-        } else {
-          updateQuery = updateQuery.is('user_id', null);
-        }
-        
         if (isGuest && guestDisplayName) {
-          updateQuery = updateQuery.eq('display_name', guestDisplayName);
+          // For guests: user_id must be null AND display_name must match
+          updateQuery = updateQuery
+            .is('user_id', null)
+            .eq('display_name', guestDisplayName);
+        } else if (userId) {
+          // For authenticated users: user_id must match
+          updateQuery = updateQuery.eq('user_id', userId);
         }
         
         const { error: updateError } = await updateQuery;
@@ -226,14 +264,24 @@ const GameQuestions = ({
           console.error('Error updating participant score:', updateError);
           toast({
             title: "Napaka",
-            description: "Napaka pri posodabljanju rezultata",
+            description: "Napaka pri posodabljanju rezultata: " + updateError.message,
             variant: "destructive",
           });
         } else {
-          console.log('Score updated successfully');
+          console.log('Score updated successfully for participant:', participant.id);
+          toast({
+            title: "Uspeh",
+            description: "Pravilno! +1 točka",
+            variant: "default",
+          });
         }
-      } else {
-        console.error('No participant found for score update');
+      } catch (error) {
+        console.error('Unexpected error during score update:', error);
+        toast({
+          title: "Napaka",
+          description: "Nepričakovana napaka pri posodabljanju rezultata",
+          variant: "destructive",
+        });
       }
     }
     
