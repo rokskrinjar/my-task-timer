@@ -591,7 +591,7 @@ const Game = () => {
                 onQuestionChange={handleQuestionChange}
                 onAnswerSubmitted={handleAnswerSubmitted}
                 isHost={isHost}
-                userId={user?.id}
+                userId={user?.id || null}
                 isGuest={isGuest}
                 guestDisplayName={guestPlayer?.displayName}
               />
