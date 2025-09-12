@@ -278,53 +278,27 @@ const GameQuestions = ({
               <p className="text-sm font-medium text-purple-800 mb-3">Glasovanje občinstva:</p>
               <div className="h-32 mb-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
+                  <BarChart
                     layout="horizontal"
-                    data={Object.entries(audienceVotes)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([option, percentage]) => ({
-                        option: option,
-                        percentage: Number(percentage),
-                        isCorrect: option === currentQuestion.correct_answer
-                      }))}
-                    margin={{ top: 5, right: 50, left: 30, bottom: 5 }}
+                    width={400}
+                    height={120}
+                    data={[
+                      { answer: 'A', percentage: audienceVotes['A'] || 0, isCorrect: currentQuestion.correct_answer === 'A' },
+                      { answer: 'B', percentage: audienceVotes['B'] || 0, isCorrect: currentQuestion.correct_answer === 'B' },
+                      { answer: 'C', percentage: audienceVotes['C'] || 0, isCorrect: currentQuestion.correct_answer === 'C' },
+                      { answer: 'D', percentage: audienceVotes['D'] || 0, isCorrect: currentQuestion.correct_answer === 'D' }
+                    ]}
                   >
-                    <XAxis 
-                      type="number"
-                      domain={[0, 100]}
-                      tick={{ fontSize: 12 }}
-                      tickLine={true}
-                      axisLine={true}
-                    />
-                    <YAxis 
-                      type="category"
-                      dataKey="option" 
-                      tick={{ fontSize: 14, fontWeight: 'bold' }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={25}
-                    />
-                    <Bar 
-                      dataKey="percentage" 
-                      radius={[0, 4, 4, 0]}
-                      fill="#8b5cf6"
-                    >
-                      <LabelList 
-                        dataKey="percentage" 
-                        position="right" 
-                        fill="#374151" 
-                        fontSize={12}
-                        fontWeight="bold"
-                        formatter={(value: number) => `${value}%`}
-                      />
-                      {Object.entries(audienceVotes)
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([option], index) => (
+                    <XAxis type="number" domain={[0, 100]} />
+                    <YAxis type="category" dataKey="answer" />
+                    <Bar dataKey="percentage">
+                      {['A', 'B', 'C', 'D'].map((option, index) => (
                         <Cell 
-                          key={`cell-${index}`}
-                          fill={option === currentQuestion.correct_answer ? "#16a34a" : "#8b5cf6"} 
+                          key={`cell-${index}`} 
+                          fill={currentQuestion.correct_answer === option ? "#22c55e" : "#a855f7"} 
                         />
                       ))}
+                      <LabelList dataKey="percentage" position="right" formatter={(value: number) => `${value}%`} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
