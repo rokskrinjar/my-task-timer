@@ -240,25 +240,13 @@ const GameQuestions = ({
         console.log('Found participant:', participant);
         console.log('Updating score from', participant.current_score, 'to', (participant.current_score || 0) + 1);
         
-        // Build update query with the same conditions
-        let updateQuery = supabase
+        // Update by participant ID - more secure and avoids RLS issues
+        const { error: updateError } = await supabase
           .from('game_participants')
           .update({ 
             current_score: (participant.current_score || 0) + 1 
           })
-          .eq('game_id', gameId);
-        
-        if (isGuest && guestDisplayName) {
-          // For guests: user_id must be null AND display_name must match
-          updateQuery = updateQuery
-            .is('user_id', null)
-            .eq('display_name', guestDisplayName);
-        } else if (userId) {
-          // For authenticated users: user_id must match
-          updateQuery = updateQuery.eq('user_id', userId);
-        }
-        
-        const { error: updateError } = await updateQuery;
+          .eq('id', participant.id);
         
         if (updateError) {
           console.error('Error updating participant score:', updateError);
