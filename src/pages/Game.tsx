@@ -66,6 +66,7 @@ const Game = () => {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentQuestionAnswers, setCurrentQuestionAnswers] = useState<any[]>([]);
 
   const currentParticipant = participants.find(p => 
     user ? p.user_id === user.id : p.display_name === guestPlayer?.displayName
@@ -95,6 +96,15 @@ const Game = () => {
       }, (payload) => {
         console.log('🔥 Real-time game update received:', payload);
         handleGameUpdate(payload);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'game_answers',
+        filter: `game_id=eq.${gameId}`
+      }, (payload) => {
+        console.log('🔥 New answer received:', payload);
+        handleNewAnswer(payload);
       })
       .subscribe((status) => {
         console.log('📡 Real-time subscription status:', status);
@@ -221,6 +231,7 @@ const Game = () => {
     
     if (newGameData.current_question_id && newGameData.current_question_id !== currentQuestion?.id) {
       console.log('Question changed, fetching new question:', newGameData.current_question_id);
+      setCurrentQuestionAnswers([]); // Reset answers for new question
       fetchCurrentQuestion(newGameData.current_question_id);
     }
   };
@@ -356,9 +367,43 @@ const Game = () => {
     }
   };
 
+  const handleNewAnswer = async (payload: any) => {
+    const newAnswer = payload.new;
+    console.log('🎯 Processing new answer:', newAnswer);
+    
+    // Only process actual answers, not lifeline usage
+    if (!newAnswer.user_answer || newAnswer.lifeline_used) return;
+    
+    // Fetch all answers for current question to check if everyone has answered
+    if (currentQuestion && game?.status === 'active') {
+      const { data: allAnswers, error } = await supabase
+        .from('game_answers')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('question_id', currentQuestion.id)
+        .not('user_answer', 'is', null)
+        .is('lifeline_used', null);
+
+      if (!error && allAnswers) {
+        console.log('📊 Current answers for question:', allAnswers.length, 'Total participants:', participants.length);
+        setCurrentQuestionAnswers(allAnswers);
+        
+        // Check if all participants have answered
+        if (allAnswers.length >= participants.length && participants.length > 0 && isHost) {
+          console.log('🎉 All participants have answered! Auto-progressing...');
+          // Small delay to let UI update, then auto-progress
+          setTimeout(() => {
+            nextQuestion();
+          }, 2000);
+        }
+      }
+    }
+  };
+
   const handleAnswerSubmitted = (answer: string) => {
     console.log('Answer submitted:', answer);
-    // Handle any additional logic after answer submission
+    // Reset current question answers when question changes
+    setCurrentQuestionAnswers([]);
   };
 
   const handleQuestionChange = (question: Question | null) => {
