@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -38,6 +38,8 @@ const CategoryManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [sortColumn, setSortColumn] = useState<'name' | 'question_count' | 'status' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Fetch categories
   const { data: categories = [], isLoading } = useQuery({
@@ -183,6 +185,52 @@ const CategoryManagement = () => {
     deleteCategoryMutation.mutate(category.id);
   };
 
+  const handleSort = (column: 'name' | 'question_count' | 'status') => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: 'name' | 'question_count' | 'status') => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedCategories = React.useMemo(() => {
+    if (!sortColumn) return categories;
+    
+    return [...categories].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortColumn) {
+        case 'name':
+          aValue = a.display_name.toLowerCase();
+          bValue = b.display_name.toLowerCase();
+          break;
+        case 'question_count':
+          aValue = a.question_count;
+          bValue = b.question_count;
+          break;
+        case 'status':
+          aValue = a.is_enabled ? 1 : 0;
+          bValue = b.is_enabled ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [categories, sortColumn, sortDirection]);
+
   return (
     <AdminRoute>
       <div className="container mx-auto py-6 px-4">
@@ -248,18 +296,42 @@ const CategoryManagement = () => {
                 Ni najdenih kategorij
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ime</TableHead>
-                    <TableHead>Število vprašanj</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ustvarjeno</TableHead>
-                    <TableHead>Dejanja</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
+                <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead 
+                       className="cursor-pointer hover:bg-muted/50 select-none"
+                       onClick={() => handleSort('name')}
+                     >
+                       <div className="flex items-center gap-2">
+                         Ime
+                         {getSortIcon('name')}
+                       </div>
+                     </TableHead>
+                     <TableHead 
+                       className="cursor-pointer hover:bg-muted/50 select-none"
+                       onClick={() => handleSort('question_count')}
+                     >
+                       <div className="flex items-center gap-2">
+                         Število vprašanj
+                         {getSortIcon('question_count')}
+                       </div>
+                     </TableHead>
+                     <TableHead 
+                       className="cursor-pointer hover:bg-muted/50 select-none"
+                       onClick={() => handleSort('status')}
+                     >
+                       <div className="flex items-center gap-2">
+                         Status
+                         {getSortIcon('status')}
+                       </div>
+                     </TableHead>
+                     <TableHead>Ustvarjeno</TableHead>
+                     <TableHead>Dejanja</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {sortedCategories.map((category) => (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">
                         {category.display_name}
@@ -269,18 +341,33 @@ const CategoryManagement = () => {
                           {category.question_count}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={category.is_enabled}
-                            onCheckedChange={() => handleToggleEnabled(category)}
-                            disabled={toggleCategoryMutation.isPending}
-                          />
-                          <Badge variant={category.is_enabled ? "default" : "secondary"}>
-                            {category.is_enabled ? "Omogočeno" : "Onemogočeno"}
-                          </Badge>
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex items-center gap-3">
+                           <button
+                             onClick={() => handleToggleEnabled(category)}
+                             disabled={toggleCategoryMutation.isPending}
+                             className={`
+                               relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                               disabled:cursor-not-allowed disabled:opacity-50
+                               ${category.is_enabled 
+                                 ? 'bg-primary hover:bg-primary/90' 
+                                 : 'bg-input hover:bg-muted'
+                               }
+                             `}
+                           >
+                             <span
+                               className={`
+                                 inline-block h-4 w-4 transform rounded-full bg-background shadow-lg transition-transform
+                                 ${category.is_enabled ? 'translate-x-6' : 'translate-x-1'}
+                               `}
+                             />
+                           </button>
+                           <Badge variant={category.is_enabled ? "default" : "secondary"}>
+                             {category.is_enabled ? "Omogočeno" : "Onemogočeno"}
+                           </Badge>
+                         </div>
+                       </TableCell>
                       <TableCell>
                         {new Date(category.created_at).toLocaleDateString('sl-SI')}
                       </TableCell>
