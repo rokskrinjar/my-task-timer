@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          accessed_at: string | null
+          action: string
+          admin_user_id: string
+          id: string
+          ip_address: unknown | null
+          sensitive_data_accessed: string[] | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string | null
+          action: string
+          admin_user_id: string
+          id?: string
+          ip_address?: unknown | null
+          sensitive_data_accessed?: string[] | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string | null
+          action?: string
+          admin_user_id?: string
+          id?: string
+          ip_address?: unknown | null
+          sensitive_data_accessed?: string[] | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -336,9 +369,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          location: string | null
+          skill_level: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          location?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          location?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      can_view_sensitive_data: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       generate_game_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -374,6 +446,14 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      log_admin_access: {
+        Args: {
+          action_type: string
+          sensitive_fields?: string[]
+          target_user?: string
+        }
+        Returns: undefined
       }
       select_and_reserve_game_questions: {
         Args: {

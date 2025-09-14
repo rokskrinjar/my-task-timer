@@ -13,8 +13,15 @@ const UserManagement = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
+      // Log admin access for audit purposes
+      await supabase.rpc('log_admin_access', {
+        action_type: 'view_user_profiles',
+        sensitive_fields: ['location', 'bio', 'skill_level']
+      });
+
+      // Use secure admin view that excludes phone numbers
       const { data, error } = await supabase
-        .from('profiles')
+        .from('admin_user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -63,7 +70,7 @@ const UserManagement = () => {
             <CardHeader>
               <CardTitle>System Users ({users?.length || 0})</CardTitle>
               <CardDescription>
-                Manage user accounts and roles
+                Manage user accounts and roles. Phone numbers are protected and not visible for privacy.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -76,7 +83,7 @@ const UserManagement = () => {
                       <TableHead>Display Name</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Skill Level</TableHead>
-                      <TableHead>Location</TableHead>
+                      <TableHead>General Location</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
