@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { PillToggle } from "@/components/ui/pill-toggle";
 
 interface Category {
   id: string;
@@ -342,7 +343,7 @@ const CategoryManagement = () => {
                         </Badge>
                       </TableCell>
                        <TableCell>
-                          <Switch 
+                          <PillToggle 
                             checked={category.is_enabled}
                             onCheckedChange={() => handleToggleEnabled(category)}
                             disabled={toggleCategoryMutation.isPending}
