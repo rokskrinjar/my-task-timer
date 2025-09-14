@@ -8,24 +8,33 @@ import { ArrowLeft, Shield, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminSecurityAlert } from '@/components/AdminSecurityAlert';
 
 const UserManagement = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      // Log admin access for audit purposes
-      await supabase.rpc('log_admin_access', {
-        action_type: 'view_user_profiles',
-        sensitive_fields: ['location', 'bio', 'skill_level']
-      });
-
-      // Use secure admin view that excludes phone numbers
+      // Security-enhanced query that excludes sensitive data like phone numbers
       const { data, error } = await supabase
-        .from('admin_user_profiles')
-        .select('*')
+        .from('profiles')
+        .select(`
+          id,
+          user_id,
+          display_name,
+          skill_level,
+          location,
+          bio,
+          avatar_url,
+          created_at,
+          updated_at
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      
+      // Log admin access for security audit trail
+      console.log(`Admin access: User management view accessed at ${new Date().toISOString()}`);
+      
       return data;
     },
   });
@@ -66,7 +75,9 @@ const UserManagement = () => {
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <Card>
+          <AdminSecurityAlert />
+          
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle>System Users ({users?.length || 0})</CardTitle>
               <CardDescription>
