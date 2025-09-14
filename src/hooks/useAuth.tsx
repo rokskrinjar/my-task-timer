@@ -89,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log('Fetching user role for userId:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -97,11 +98,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .limit(1)
         .single();
 
+      console.log('User role query result:', { data, error });
+
       if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
         console.error('Error fetching user role:', error);
         setUserRole('user'); // default to user role
       } else {
-        setUserRole(data?.role || 'user');
+        const role = data?.role || 'user';
+        console.log('Setting user role to:', role);
+        setUserRole(role);
       }
     } catch (error) {
       console.error('Error fetching user role:', error);
