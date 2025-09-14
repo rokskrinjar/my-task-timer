@@ -115,6 +115,20 @@ const EditQuestion = () => {
     }
   };
 
+  // Fetch categories from database for the category dropdown
+  const { data: categories = [] } = useQuery({
+    queryKey: ['all-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name, display_name')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const subjects = [
     'Matematika',
     'Slovenščina',
@@ -188,6 +202,23 @@ const EditQuestion = () => {
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={question.category} onValueChange={(value) => setValue('category', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category.name} value={category.name}>
+                            {category.display_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
                     <Select value={question.subject} onValueChange={(value) => setValue('subject', value)}>

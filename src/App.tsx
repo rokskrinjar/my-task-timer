@@ -19,6 +19,7 @@ import AddQuestion from "./pages/admin/AddQuestion";
 import EditQuestion from "./pages/admin/EditQuestion";
 import UserManagement from "./pages/admin/UserManagement";
 import GameAnalytics from "./pages/admin/GameAnalytics";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/admin/questions" element={<QuestionManagement />} />
               <Route path="/admin/questions/add" element={<AddQuestion />} />
               <Route path="/admin/questions/edit/:id" element={<EditQuestion />} />
+              <Route path="/admin/categories" element={<CategoryManagement />} />
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin/analytics" element={<GameAnalytics />} />
               

@@ -109,6 +109,20 @@ const AdminDashboard = () => {
 
             <Card>
               <CardHeader>
+                <CardTitle>Category Management</CardTitle>
+                <CardDescription>
+                  Manage question categories and their availability
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/admin/categories">
+                  <Button className="w-full">Manage Categories</Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>
                   Manage users and their roles

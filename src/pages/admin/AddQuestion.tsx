@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const questionSchema = z.object({
   question_text: z.string().min(10, 'Question must be at least 10 characters'),
@@ -82,6 +83,20 @@ const AddQuestion = () => {
     }
   };
 
+  // Fetch categories from database for the category dropdown
+  const { data: categories = [] } = useQuery({
+    queryKey: ['all-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name, display_name')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const subjects = [
     'Matematika',
     'Slovenščina',
@@ -126,6 +141,23 @@ const AddQuestion = () => {
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select onValueChange={(value) => setValue('category', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category.name} value={category.name}>
+                            {category.display_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
                     <Select onValueChange={(value) => setValue('subject', value)}>

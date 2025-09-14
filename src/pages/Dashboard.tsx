@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, LogOut, Trophy, Shield } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Game {
   id: string;
@@ -35,7 +36,8 @@ const Dashboard = () => {
   // Use optimized game data hook
   const { myGames, gamesLoading, invalidateGames } = useGameData();
 
-  const categories = [
+  // Fetch enabled categories from database with fallback to hardcoded list
+  const { data: categories = [
     'Šola',
     'Geografija', 
     'Živali',
@@ -44,7 +46,50 @@ const Dashboard = () => {
     'Movies',
     'High School',
     'Sports'
-  ];
+  ] } = useQuery({
+    queryKey: ['enabled-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('is_enabled', true)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Failed to fetch categories:', error);
+        // Return hardcoded fallback on error
+        return [
+          'Šola',
+          'Geografija', 
+          'Živali',
+          'Friends Trivia',
+          'Music',
+          'Movies',
+          'High School',
+          'Sports'
+        ];
+      }
+      
+      // Extract category names from the result
+      const categoryNames = data.map(cat => cat.name);
+      
+      // If no enabled categories found, return hardcoded fallback
+      if (categoryNames.length === 0) {
+        return [
+          'Šola',
+          'Geografija', 
+          'Živali',
+          'Friends Trivia',
+          'Music',
+          'Movies',
+          'High School',
+          'Sports'
+        ];
+      }
+      
+      return categoryNames;
+    },
+  });
 
   const createGame = async () => {
     console.log('createGame called, user:', user);
