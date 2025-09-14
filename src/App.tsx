@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import QuestionManagement from "./pages/admin/QuestionManagement";
 import AddQuestion from "./pages/admin/AddQuestion";
+import EditQuestion from "./pages/admin/EditQuestion";
 import UserManagement from "./pages/admin/UserManagement";
 import GameAnalytics from "./pages/admin/GameAnalytics";
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/questions" element={<QuestionManagement />} />
               <Route path="/admin/questions/add" element={<AddQuestion />} />
+              <Route path="/admin/questions/edit/:id" element={<EditQuestion />} />
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin/analytics" element={<GameAnalytics />} />
               

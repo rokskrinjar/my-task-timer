@@ -8,13 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const QuestionManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [subjectFilter, setSubjectFilter] = useState('all');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: questions, isLoading } = useQuery({
     queryKey: ['admin-questions', searchTerm, gradeFilter, subjectFilter],
@@ -44,6 +49,35 @@ const QuestionManagement = () => {
   });
 
   const subjects = [...new Set(questions?.map(q => q.subject) || [])];
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    try {
+      setDeletingId(questionId);
+      const { error } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Question deleted successfully!"
+      });
+      
+      // Refresh the questions list
+      queryClient.invalidateQueries({ queryKey: ['admin-questions'] });
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete question: " + (error as Error).message,
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <AdminRoute>
@@ -158,12 +192,35 @@ const QuestionManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" disabled>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" disabled>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Link to={`/admin/questions/edit/${question.id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" disabled={deletingId === question.id}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this question? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteQuestion(question.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
