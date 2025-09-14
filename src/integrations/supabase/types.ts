@@ -343,6 +343,45 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          attempted_columns: string[] | null
+          blocked_reason: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          success: boolean | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          attempted_columns?: string[] | null
+          blocked_reason?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          attempted_columns?: string[] | null
+          blocked_reason?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -405,6 +444,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_admin_safe: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          location: string | null
+          skill_level: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          location?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          location?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_view_sensitive_data: {
@@ -414,6 +489,20 @@ export type Database = {
       generate_game_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_admin_safe_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          id: string
+          location: string
+          skill_level: string
+          updated_at: string
+          user_id: string
+        }[]
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>

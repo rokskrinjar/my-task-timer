@@ -7,14 +7,14 @@ export const AdminSecurityAlert: React.FC = () => {
     <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
       <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       <AlertTitle className="text-blue-800 dark:text-blue-200">
-        Privacy Protection Active
+        Enhanced Security Protection Active
       </AlertTitle>
       <AlertDescription className="text-blue-700 dark:text-blue-300">
         <div className="flex items-start gap-2 mt-2">
           <Eye className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <div>
-            Phone numbers and other sensitive personal data are hidden from admin view for privacy protection. 
-            All admin access to user data is logged for security audit purposes.
+            <strong>Field-Level Security:</strong> Phone numbers and sensitive personal data are completely blocked from admin access at the database level. 
+            All access attempts are logged and audited for security compliance. Only users can view their own complete profiles.
           </div>
         </div>
       </AlertDescription>

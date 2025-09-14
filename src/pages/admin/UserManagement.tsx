@@ -12,28 +12,35 @@ import { AdminSecurityAlert } from '@/components/AdminSecurityAlert';
 
 const UserManagement = () => {
   const { data: users, isLoading } = useQuery({
-    queryKey: ['admin-users'],
+    queryKey: ['admin-users-secure'],
     queryFn: async () => {
-      // Security-enhanced query that excludes sensitive data like phone numbers
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          display_name,
-          skill_level,
-          location,
-          bio,
-          avatar_url,
-          created_at,
-          updated_at
-        `)
-        .order('created_at', { ascending: false });
+      // Use the secure database function that excludes sensitive fields
+      const { data, error } = await supabase.rpc('get_admin_safe_profiles');
       
-      if (error) throw error;
+      if (error) {
+        // Log security event for failed access attempt
+        await supabase
+          .from('security_audit_log')
+          .insert({
+            user_id: null,
+            action: 'admin_profile_access_failed',
+            table_name: 'profiles',
+            attempted_columns: ['all_fields'],
+            success: false,
+            blocked_reason: error.message
+          });
+        throw error;
+      }
       
-      // Log admin access for security audit trail
-      console.log(`Admin access: User management view accessed at ${new Date().toISOString()}`);
+      // Log successful admin access
+      await supabase
+        .from('security_audit_log')
+        .insert({
+          action: 'admin_safe_profile_access',
+          table_name: 'profiles',
+          attempted_columns: ['non_sensitive_fields_only'],
+          success: true
+        });
       
       return data;
     },
