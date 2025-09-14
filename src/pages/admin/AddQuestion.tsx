@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const questionSchema = z.object({
   question_text: z.string().min(10, 'Question must be at least 10 characters'),
@@ -28,6 +30,9 @@ const questionSchema = z.object({
 type QuestionForm = z.infer<typeof questionSchema>;
 
 const AddQuestion = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const {
     register,
     handleSubmit,
@@ -44,9 +49,37 @@ const AddQuestion = () => {
   });
 
   const onSubmit = async (data: QuestionForm) => {
-    // TODO: Implement question creation when admin policies are in place
-    console.log('Question data:', data);
-    alert('Question creation will be implemented once admin policies are in place');
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .insert({
+          question_text: data.question_text,
+          subject: data.subject,
+          grade_level: data.grade_level,
+          option_a: data.option_a,
+          option_b: data.option_b,
+          option_c: data.option_c,
+          option_d: data.option_d,
+          correct_answer: data.correct_answer,
+          difficulty_order: data.difficulty_order,
+          category: data.category
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Question created successfully!"
+      });
+      navigate('/admin/questions');
+    } catch (error) {
+      console.error('Error saving question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save question: " + (error as Error).message,
+        variant: "destructive"
+      });
+    }
   };
 
   const subjects = [

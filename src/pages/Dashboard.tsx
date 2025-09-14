@@ -31,12 +31,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Debug auth state
-  console.log('Dashboard render - Auth state:', { 
-    user: user ? `${user.email} (id: ${user.id})` : 'null', 
-    isAdmin, 
-    authLoading 
-  });
 
   // Use optimized game data hook
   const { myGames, gamesLoading, invalidateGames } = useGameData();
@@ -208,7 +202,6 @@ const Dashboard = () => {
 
   // Redirect if not authenticated
   if (!authLoading && !user) {
-    console.log('Dashboard: No user found, redirecting to auth');
     navigate('/auth');
     return null;
   }

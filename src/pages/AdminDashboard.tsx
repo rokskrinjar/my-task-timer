@@ -5,8 +5,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, FileQuestion, BarChart3, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
+  // Fetch dashboard statistics
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      const [usersResult, questionsResult, gamesResult] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('questions').select('id', { count: 'exact', head: true }),
+        supabase.from('games').select('id', { count: 'exact', head: true })
+      ]);
+
+      return {
+        totalUsers: usersResult.count || 0,
+        totalQuestions: questionsResult.count || 0,
+        totalGames: gamesResult.count || 0
+      };
+    }
+  });
+
   return (
     <AdminRoute>
       <div className="min-h-screen bg-background">
@@ -29,7 +49,9 @@ const AdminDashboard = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">--</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? '...' : stats?.totalUsers || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Registered users
                 </p>
@@ -42,7 +64,9 @@ const AdminDashboard = () => {
                 <FileQuestion className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">--</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? '...' : stats?.totalQuestions || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Available questions
                 </p>
@@ -55,7 +79,9 @@ const AdminDashboard = () => {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">--</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? '...' : stats?.totalGames || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Games played
                 </p>
