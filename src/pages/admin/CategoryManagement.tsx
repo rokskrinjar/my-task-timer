@@ -343,26 +343,26 @@ const CategoryManagement = () => {
                       </TableCell>
                        <TableCell>
                          <div className="flex items-center gap-3">
-                           <button
-                             onClick={() => handleToggleEnabled(category)}
-                             disabled={toggleCategoryMutation.isPending}
-                             className={`
-                               relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                               disabled:cursor-not-allowed disabled:opacity-50
-                               ${category.is_enabled 
-                                 ? 'bg-primary hover:bg-primary/90' 
-                                 : 'bg-input hover:bg-muted'
-                               }
-                             `}
-                           >
-                             <span
-                               className={`
-                                 inline-block h-4 w-4 transform rounded-full bg-background shadow-lg transition-transform
-                                 ${category.is_enabled ? 'translate-x-6' : 'translate-x-1'}
-                               `}
-                             />
-                           </button>
+                            <button
+                              onClick={() => handleToggleEnabled(category)}
+                              disabled={toggleCategoryMutation.isPending}
+                              className={`
+                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                                disabled:cursor-not-allowed disabled:opacity-50
+                                ${category.is_enabled 
+                                  ? 'bg-primary hover:bg-primary/90' 
+                                  : 'bg-input hover:bg-muted'
+                                }
+                              `}
+                            >
+                              <span
+                                className={`
+                                  inline-block h-4 w-4 transform rounded-full bg-background shadow-lg transition-transform
+                                  ${category.is_enabled ? 'translate-x-6' : 'translate-x-1'}
+                                `}
+                              />
+                            </button>
                            <Badge variant={category.is_enabled ? "default" : "secondary"}>
                              {category.is_enabled ? "Omogočeno" : "Onemogočeno"}
                            </Badge>
