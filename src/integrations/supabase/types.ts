@@ -341,6 +341,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       select_and_reserve_game_questions: {
         Args: {
           p_category: string
