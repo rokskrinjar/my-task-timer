@@ -23,13 +23,20 @@ interface Game {
 }
 
 const Dashboard = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, loading: authLoading } = useAuth();
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Šola');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Debug auth state
+  console.log('Dashboard render - Auth state:', { 
+    user: user ? `${user.email} (id: ${user.id})` : 'null', 
+    isAdmin, 
+    authLoading 
+  });
 
   // Use optimized game data hook
   const { myGames, gamesLoading, invalidateGames } = useGameData();
@@ -198,6 +205,25 @@ const Dashboard = () => {
     await signOut();
     navigate('/auth');
   };
+
+  // Redirect if not authenticated
+  if (!authLoading && !user) {
+    console.log('Dashboard: No user found, redirecting to auth');
+    navigate('/auth');
+    return null;
+  }
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Preverjanje prijave...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

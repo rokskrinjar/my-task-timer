@@ -21,9 +21,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
 
   useEffect(() => {
+    console.log('useAuth: Setting up auth listener');
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('useAuth: Auth state change event:', event, session ? `user: ${session.user.email}` : 'no session');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -76,6 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('useAuth: Initial session check:', session ? `user: ${session.user.email}` : 'no session');
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
