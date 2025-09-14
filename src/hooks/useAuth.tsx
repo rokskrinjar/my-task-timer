@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  userRole: 'admin' | 'user' | null;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -16,6 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -25,9 +28,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Create profile if user signs up
+        // Create profile and assign default role if user signs up
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
+            // Create profile
             const { error } = await supabase
               .from('profiles')
               .upsert({
@@ -40,7 +44,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (error) {
               console.error('Error creating profile:', error);
             }
+
+            // Assign default user role if not exists
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .upsert({
+                user_id: session.user.id,
+                role: 'user'
+              }, {
+                onConflict: 'user_id,role'
+              });
+
+            if (roleError) {
+              console.error('Error creating user role:', roleError);
+            }
+
+            // Fetch user role
+            fetchUserRole(session.user.id);
           }, 0);
+        } else if (session?.user) {
+          // Fetch role for existing sessions
+          setTimeout(() => {
+            fetchUserRole(session.user.id);
+          }, 0);
+        } else {
+          // Clear role when signed out
+          setUserRole(null);
         }
       }
     );
@@ -49,11 +78,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .order('role', { ascending: true }) // admin comes before user
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error('Error fetching user role:', error);
+        setUserRole('user'); // default to user role
+      } else {
+        setUserRole(data?.role || 'user');
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('user'); // default to user role
+    }
+  };
 
   const signOut = async () => {
     try {
@@ -62,6 +116,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Clear local state regardless of server response
       setSession(null);
       setUser(null);
+      setUserRole(null);
       
       // Handle session_not_found as success (user already logged out)
       if (error && !error.message.includes('session_not_found')) {
@@ -88,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Force clear local state even on error
       setSession(null);
       setUser(null);
+      setUserRole(null);
       
       toast({
         title: "Logged out",
@@ -100,8 +156,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const isAdmin = userRole === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, isAdmin, signOut }}>
       {children}
     </AuthContext.Provider>
   );
