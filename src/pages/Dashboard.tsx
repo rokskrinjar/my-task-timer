@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, Users, LogOut, Trophy } from 'lucide-react';
+import { Plus, Users, LogOut, Trophy, Shield } from 'lucide-react';
 
 interface Game {
   id: string;
@@ -23,7 +23,7 @@ interface Game {
 }
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Šola');
@@ -210,6 +210,17 @@ const Dashboard = () => {
             <span className="text-sm text-muted-foreground">
               Pozdravljen, {user?.user_metadata?.display_name || user?.email}
             </span>
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/admin')}
+                className="text-orange-600 border-orange-600 hover:bg-orange-50"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Odjava
