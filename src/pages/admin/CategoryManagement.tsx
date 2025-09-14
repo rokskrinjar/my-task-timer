@@ -342,31 +342,11 @@ const CategoryManagement = () => {
                         </Badge>
                       </TableCell>
                        <TableCell>
-                         <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleToggleEnabled(category)}
-                              disabled={toggleCategoryMutation.isPending}
-                              className={`
-                                relative inline-flex h-5 w-9 items-center rounded-full transition-colors
-                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                                disabled:cursor-not-allowed disabled:opacity-50
-                                ${category.is_enabled 
-                                  ? 'bg-primary hover:bg-primary/90' 
-                                  : 'bg-input hover:bg-muted'
-                                }
-                              `}
-                            >
-                              <span
-                                className={`
-                                  inline-block h-4 w-4 transform rounded-full bg-background shadow-lg transition-transform
-                                  ${category.is_enabled ? 'translate-x-4' : 'translate-x-0.5'}
-                                `}
-                              />
-                            </button>
-                           <Badge variant={category.is_enabled ? "default" : "secondary"}>
-                             {category.is_enabled ? "Omogočeno" : "Onemogočeno"}
-                           </Badge>
-                         </div>
+                          <Switch 
+                            checked={category.is_enabled}
+                            onCheckedChange={() => handleToggleEnabled(category)}
+                            disabled={toggleCategoryMutation.isPending}
+                          />
                        </TableCell>
                       <TableCell>
                         {new Date(category.created_at).toLocaleDateString('sl-SI')}
