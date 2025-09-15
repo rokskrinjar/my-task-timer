@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { ExcelImportDialog } from '@/components/admin/ExcelImportDialog';
 
 const QuestionManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,12 +95,15 @@ const QuestionManagement = () => {
                 </Link>
                 <h1 className="text-2xl font-bold text-foreground">Question Management</h1>
               </div>
-              <Link to="/admin/questions/add">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <ExcelImportDialog onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['admin-questions'] })} />
+                <Link to="/admin/questions/add">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Question
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </header>
