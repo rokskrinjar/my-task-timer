@@ -96,26 +96,30 @@ const UserManagement = () => {
                 <div className="text-center py-8">Loading users...</div>
               ) : (
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Display Name</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Skill Level</TableHead>
-                      <TableHead>General Location</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>Display Name</TableHead>
+                       <TableHead>Email</TableHead>
+                       <TableHead>Role</TableHead>
+                       <TableHead>Skill Level</TableHead>
+                       <TableHead>General Location</TableHead>
+                       <TableHead>Joined</TableHead>
+                       <TableHead>Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody>
                     {users?.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {user.display_name || 'Unknown User'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-2">
+                             <User className="h-4 w-4 text-muted-foreground" />
+                             {user.display_name || 'Unknown User'}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           {user.email || <span className="text-muted-foreground">-</span>}
+                         </TableCell>
+                         <TableCell>
                           {userRoles?.filter(role => role.user_id === user.user_id).length ? (
                             <div className="flex gap-1">
                               {userRoles

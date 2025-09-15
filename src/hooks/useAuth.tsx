@@ -32,11 +32,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
             // Create profile
+            const displayName = session.user.user_metadata?.full_name || 
+                              session.user.user_metadata?.name || 
+                              session.user.user_metadata?.display_name ||
+                              session.user.email?.split('@')[0] ||
+                              'Neimenovan igralec';
+            
             const { error } = await supabase
               .from('profiles')
               .upsert({
                 user_id: session.user.id,
-                display_name: session.user.user_metadata?.display_name || 'Neimenovan igralec'
+                display_name: displayName,
+                email: session.user.email
               }, {
                 onConflict: 'user_id'
               });
