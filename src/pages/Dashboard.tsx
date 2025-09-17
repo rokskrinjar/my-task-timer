@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, LogOut, Trophy, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { TimerModeToggle } from '@/components/TimerModeToggle';
 
 interface Game {
   id: string;
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [gameCode, setGameCode] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Šola');
+  const [hasTimer, setHasTimer] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -120,7 +122,8 @@ const Dashboard = () => {
         host_id: user.id,
         game_code: codeData,
         status: 'waiting',
-        category: selectedCategory
+        category: selectedCategory,
+        has_timer: hasTimer
       })
       .select()
       .single();
@@ -322,6 +325,10 @@ const Dashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <TimerModeToggle 
+                hasTimer={hasTimer}
+                onToggle={setHasTimer}
+              />
               <Button 
                 onClick={() => {
                   console.log('Create game button clicked');

@@ -12,6 +12,8 @@ import QuestionStatsCard from '@/components/QuestionStatsCard';
 import GameParticipants from '@/components/GameParticipants';
 import GameQuestions from '@/components/GameQuestions';
 import { GameResults } from '@/components/GameResults';
+import { AnswerStatusIndicator } from '@/components/AnswerStatusIndicator';
+import { CountdownOverlay } from '@/components/CountdownOverlay';
 
 interface Question {
   id: string;
@@ -34,6 +36,9 @@ interface Game {
   current_question_number: number;
   current_question_id?: string;
   category?: string;
+  has_timer?: boolean;
+  show_correct_answer?: boolean;
+  question_result_shown_at?: string;
 }
 
 interface Participant {
@@ -68,6 +73,8 @@ const Game = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentQuestionAnswers, setCurrentQuestionAnswers] = useState<any[]>([]);
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [gameTimer, setGameTimer] = useState<NodeJS.Timeout | null>(null);
 
   const currentParticipant = participants.find(p => 
     user ? p.user_id === user.id : p.display_name === guestPlayer?.displayName
@@ -276,6 +283,65 @@ const Game = () => {
       setCurrentQuestionAnswers([]); // Reset answers for new question
       fetchCurrentQuestion(newGameData.current_question_id);
     }
+
+    // Handle timed mode progression
+    if (newGameData.has_timer && newGameData.show_correct_answer && !game?.show_correct_answer) {
+      // Show answer reveal for 3 seconds, then countdown
+      setTimeout(() => {
+        setShowCountdown(true);
+      }, 3000);
+    }
+  };
+
+  // Auto-progression for timed games
+  useEffect(() => {
+    if (game?.has_timer && currentQuestion && !game.show_correct_answer && participants.length > 0) {
+      // Start 30-second timer
+      const timer = setTimeout(() => {
+        if (isHost) {
+          showCorrectAnswerAndProgress();
+        }
+      }, 30000);
+      setGameTimer(timer);
+      
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
+    }
+  }, [currentQuestion?.id, game?.has_timer, participants.length]);
+
+  // Check if all participants have answered
+  useEffect(() => {
+    if (!game?.has_timer || !currentQuestion || participants.length === 0) return;
+    
+    const allAnswered = currentQuestionAnswers.length >= participants.length;
+    if (allAnswered && isHost && !game.show_correct_answer) {
+      if (gameTimer) clearTimeout(gameTimer);
+      showCorrectAnswerAndProgress();
+    }
+  }, [currentQuestionAnswers.length, participants.length, game?.has_timer]);
+
+  const showCorrectAnswerAndProgress = async () => {
+    if (!game || !isHost) return;
+    
+    // Show correct answer
+    const { error } = await supabase
+      .from('games')
+      .update({
+        show_correct_answer: true,
+        question_result_shown_at: new Date().toISOString()
+      })
+      .eq('id', gameId);
+
+    if (error) {
+      console.error('Error showing correct answer:', error);
+      return;
+    }
+
+    // After 3 seconds, show countdown and progress
+    setTimeout(() => {
+      setShowCountdown(true);
+    }, 3000);
   };
 
   const startGame = async () => {
@@ -452,6 +518,15 @@ const Game = () => {
     setCurrentQuestion(question);
   };
 
+  const handleCountdownComplete = () => {
+    setShowCountdown(false);
+    nextQuestion();
+  };
+
+  // Check if all participants answered (for untimed mode)
+  const allParticipantsAnswered = currentQuestionAnswers.length >= participants.length;
+  const answeredParticipantIds = currentQuestionAnswers.map(answer => answer.participant_id || answer.user_id);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -531,15 +606,23 @@ const Game = () => {
                       Začni igro
                     </Button>
                   )}
-                  {game.status === 'active' && (
+                  {game.status === 'active' && !game.has_timer && (
                     <Button 
                       onClick={nextQuestion} 
                       className="w-full" 
                       size="lg"
+                      disabled={!allParticipantsAnswered}
                     >
                       <SkipForward className="h-4 w-4 mr-2" />
                       Naslednje vprašanje
                     </Button>
+                  )}
+                  {game.status === 'active' && game.has_timer && (
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Časovni način - igra poteka avtomatsko
+                      </p>
+                    </div>
                   )}
                   {game.status === 'finished' && (
                     <div className="text-center py-4">
@@ -610,6 +693,12 @@ const Game = () => {
           </div>
         </div>
       </main>
+
+      {/* Countdown Overlay for timed mode */}
+      <CountdownOverlay 
+        isVisible={showCountdown}
+        onComplete={handleCountdownComplete}
+      />
     </div>
   );
 };

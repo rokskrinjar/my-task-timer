@@ -29,6 +29,8 @@ interface GameQuestionsProps {
   userId?: string;
   isGuest?: boolean;
   guestDisplayName?: string;
+  hasTimer?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 const GameQuestions = ({ 
@@ -39,7 +41,9 @@ const GameQuestions = ({
   isHost,
   userId,
   isGuest,
-  guestDisplayName
+  guestDisplayName,
+  hasTimer = false,
+  showCorrectAnswer = false
 }: GameQuestionsProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [hasAnswered, setHasAnswered] = useState(false);
@@ -53,10 +57,10 @@ const GameQuestions = ({
   const [audienceVotes, setAudienceVotes] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
 
-  // Timer effect
+  // Timer effect - only for timed games
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (timerActive && timeLeft > 0) {
+    if (hasTimer && timerActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => {
           const newTime = prev - 1;
@@ -77,7 +81,7 @@ const GameQuestions = ({
         clearInterval(interval);
       }
     };
-  }, [timerActive, timeLeft, hasAnswered]);
+  }, [hasTimer, timerActive, timeLeft, hasAnswered]);
 
   // Reset state when question changes (but keep game-wide lifeline usage)
   useEffect(() => {
@@ -85,14 +89,14 @@ const GameQuestions = ({
       setSelectedAnswer('');
       setHasAnswered(false);
       setTimeLeft(30);
-      setTimerActive(true);
+      setTimerActive(hasTimer); // Only activate timer for timed games
       setShowFiftyFifty(false);
       setHiddenOptions([]);
       setLifelinesUsed([]); // Reset per-question usage
       setPhoneAdvice('');
       setAudienceVotes({});
     }
-  }, [currentQuestion?.id]);
+  }, [currentQuestion?.id, hasTimer]);
 
   // Fetch game-wide lifeline usage on component mount
   useEffect(() => {
@@ -387,14 +391,21 @@ const GameQuestions = ({
 
   return (
     <div className="space-y-4">
-      {/* Timer and Lifelines */}
+      {/* Timer and Lifelines - only show timer for timed games */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span className="font-medium">{timeLeft}s</span>
-            </div>
+            {hasTimer && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span className="font-medium">{timeLeft}s</span>
+              </div>
+            )}
+            {!hasTimer && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Brez časovnega omejevanja</span>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -477,7 +488,7 @@ const GameQuestions = ({
           {options.map((option) => {
             const isHidden = hiddenOptions.includes(option.key);
             const isSelected = selectedAnswer === option.key;
-            const isCorrect = hasAnswered && option.key === currentQuestion.correct_answer;
+            const isCorrect = (hasAnswered || showCorrectAnswer) && option.key === currentQuestion.correct_answer;
             const isWrong = hasAnswered && isSelected && option.key !== currentQuestion.correct_answer;
             
             if (isHidden) return null;
@@ -491,17 +502,29 @@ const GameQuestions = ({
                   isWrong ? "bg-red-600 hover:bg-red-700 text-white border-red-600" : ""
                 }`}
                 onClick={() => {
-                  if (!hasAnswered) {
+                  if (!hasAnswered && !showCorrectAnswer) {
                     handleSubmitAnswer(option.key);
                   }
                 }}
-                disabled={hasAnswered}
+                disabled={hasAnswered || showCorrectAnswer}
               >
                 <span className="font-medium mr-2">{option.key}.</span>
                 {option.text}
               </Button>
             );
           })}
+
+          {/* Show answer result for timed games */}
+          {showCorrectAnswer && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-center text-green-800 font-medium">
+                Pravilen odgovor: {currentQuestion.correct_answer}
+              </p>
+              <p className="text-center text-sm text-green-600 mt-2">
+                Naslednje vprašanje sledi...
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

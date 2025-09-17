@@ -201,9 +201,12 @@ export type Database = {
           current_question_number: number | null
           finished_at: string | null
           game_code: string
+          has_timer: boolean
           host_id: string
           id: string
           max_players: number | null
+          question_result_shown_at: string | null
+          show_correct_answer: boolean
           started_at: string | null
           status: string
         }
@@ -214,9 +217,12 @@ export type Database = {
           current_question_number?: number | null
           finished_at?: string | null
           game_code: string
+          has_timer?: boolean
           host_id: string
           id?: string
           max_players?: number | null
+          question_result_shown_at?: string | null
+          show_correct_answer?: boolean
           started_at?: string | null
           status?: string
         }
@@ -227,9 +233,12 @@ export type Database = {
           current_question_number?: number | null
           finished_at?: string | null
           game_code?: string
+          has_timer?: boolean
           host_id?: string
           id?: string
           max_players?: number | null
+          question_result_shown_at?: string | null
+          show_correct_answer?: boolean
           started_at?: string | null
           status?: string
         }
